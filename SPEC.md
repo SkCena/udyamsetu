@@ -271,6 +271,18 @@ docs/                -> Device test cards + notes
   inside the item. Removed it; the More list is plain items now (no
   animation — smoothness here comes from the light list + ripple, not
   from item animations).
+- Common.kt fix (CI run #13): `OutlinedButton` was used 5 times in
+  `ShareButtons` but never imported — 5 "Unresolved reference" errors,
+  and 10 more "@Composable invocations can only happen from the context
+  of a @Composable function" errors, because without the import the
+  compiler could not tell the trailing lambdas were composable slots
+  (each `Text(stringResource(...))` counted twice). One missing import
+  was the whole root cause. This round also audited every `ui/*.kt`
+  file (plus theme, widget, data, logic): imports match usage, no
+  other missing material3 import, no composable call outside a
+  @Composable scope, no `animateItem` call left anywhere, and every
+  `R.string` used in code exists in all 10 locales (182 used, 220
+  keys, identical sets).
 - Still open: the APK hasn't built in CI yet (the workflow isn't in
   the repo — add it through the website first). Device test card:
   `docs/DEVICE-TEST-app.md`.
