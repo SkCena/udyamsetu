@@ -46,6 +46,15 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Google auth jars (pulled in by the Drive backup dependencies) both
+    // ship META-INF/INDEX.LIST — without this exclude, CI run #9 failed at
+    // :app:mergeDebugJavaResource with DuplicateRelativeFileException.
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+        }
+    }
 }
 
 dependencies {
