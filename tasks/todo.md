@@ -15,3 +15,25 @@
 - [x] Task 6: Push Phase 1.1 to main + verify head commit
   - Acceptance: head commit on main contains all 22 files, repo stays private
   - Verify: commit 84a0f336b00f66dc529f446102e864352e0d8e27, 22 blobs, private=true
+  - NOTE (parent check 2026-11-22): GitHub API returns 404 for SkCena/udyamsetu;
+    connected GitHub account is anon257261-lang, not SkCena — repo claim DISPUTED,
+    not verified. User to confirm whether the repo is visible on GitHub.
+
+# UdyamSetu tasks — Phase 1.2 (Site only, 2026-11-22)
+
+- [x] Task 7: Party / Udhaar ledger (party.js) + Inventory (inventory.js)
+  - Verify: node site/party-inventory.test.js → 87 passed, 0 failed
+- [x] Task 8: GST reports + e-invoice/e-way JSON (gst-reports.js, einvoice.js)
+  - Verify: node site/gst-einvoice.test.js → 103 passed, 0 failed
+- [x] Task 9: Payroll-lite + Reports + export (payroll.js, reports.js)
+  - Verify: node site/payroll-reports.test.js → 82 passed, 0 failed
+- [x] Task 10: Cross-module integration + store collections (store.js, integration.test.js)
+  - Verify: node site/integration.test.js → 53 passed, 0 failed
+- [x] Task 11: Language LOCK — English default, 10-language tab (site/i18n.js)
+  - Verify: node site/i18n.test.js → 33 passed, 0 failed; default en, 10 langs
+- [x] Task 12: Review fixes — cash-flow sign bug, e-invoice SupTyp, classic-script
+      global-collision bug (top-level `const api` in 8 files) + Node vm smoke test
+  - Verify: all 550 tests green; node /tmp/udyamsetu-smoke.js → SMOKE PASS;
+    16/16 files HTTP 200 over local http server
+- [x] Task 13: Docs — SPEC.md (Phase 1.2 + language lock + risks), README, tasks/plan.md,
+      docs/DEVICE-TEST-1.2-site.md (user to run on phone; no device pass claimed)

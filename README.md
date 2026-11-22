@@ -1,5 +1,10 @@
 # UdyamSetu
 
+> Phase 1.2 (Site) DONE — Party/Udhaar, Inventory, GST reports,
+> e-invoice/e-way JSON, Payroll-lite, Reports + export, English-first
+> i18n (10 languages). 550 node tests green + browser smoke green.
+> Headless-verified only — device test pending (user).
+
 Free, mobile-first business / GST / accounting for small Indian shops.
 One product, two surfaces: a static local-first **Site** (PWA) and an
 **Android app**. No server, no account, no paywall. Data lives on the

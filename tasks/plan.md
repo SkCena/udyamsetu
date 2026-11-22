@@ -33,10 +33,15 @@ data model. Local-first, no server, no paywall. Private repo.
 - [ ] Device test cards written (site done; app pending Android work)
 - [ ] No device pass claimed
 
-### Phase 1.2 (next, needs parent go-ahead)
-- [ ] Party/Udhaar ledger
-- [ ] Inventory (godown, batch/expiry, barcode)
-- [ ] GST reports + e-invoice/e-way JSON + Payroll-lite + Reports + CA-ready export
+### Phase 1.2 — done this round (Site only, 2026-11-22, headless-verified)
+- [x] Party/Udhaar ledger — party.js, 87 tests (party-inventory)
+- [x] Inventory (godown, batch/expiry) — inventory.js; barcode deferred
+- [x] GST reports (GSTR-1/3B, 2A/2B) + e-invoice/e-way JSON — gst-reports.js + einvoice.js, 103 tests
+- [x] Payroll-lite — payroll.js, 82 tests (payroll-reports)
+- [x] Reports + export (CSV/JSON/Tally BETA) — reports.js; integration 53 tests
+- [x] Language LOCK — English default, 10-language tab switch (i18n.js, 33 tests)
+- [x] Device test card — docs/DEVICE-TEST-1.2-site.md (user to run on phone)
+- [x] Fixes found in review: cross-module cash-flow sign bug; e-invoice SupTyp B2B/B2C; classic-script global `const api` collision (Site would not have loaded in a browser — now covered by a Node vm smoke test loading all 12 scripts in order)
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |

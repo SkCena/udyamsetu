@@ -1,15 +1,15 @@
 // UdyamSetu Site — pure invoice logic (no DOM, no I/O).
-// All tax math comes from core/gst.js — nothing is re-implemented here.
+// All tax math comes from core/gstCore.js — nothing is re-implemented here.
 // All money in integer paise. Mirrors the Android data model field names.
 'use strict';
 
-let gst;
+let gstCore;
 if (typeof module !== 'undefined' && module.exports) {
-  gst = require('../core/gst.js');
+  gstCore = require('../core/gst.js');
 } else {
-  // Browser: core/gst.js is loaded as a classic script before this file,
+  // Browser: core/gstCore.js is loaded as a classic script before this file,
   // so its top-level declarations are visible as globals here.
-  gst = { GST_SLABS, isValidGSTIN, isValidHSN, calcInvoice, invoiceNumber, financialYear, formatINR };
+  gstCore = { GST_SLABS, isValidGSTIN, isValidHSN, calcInvoice, invoiceNumber, financialYear, formatINR };
 }
 
 /** Indian states / UTs by GST state code. Code drives intra/inter-state. */
@@ -83,7 +83,7 @@ function validateProfile(p) {
   const errors = [];
   if (!p || typeof p.name !== 'string' || !p.name.trim()) errors.push('name-required');
   if (p && p.gstin) {
-    if (!gst.isValidGSTIN(String(p.gstin).trim().toUpperCase())) errors.push('gstin-invalid');
+    if (!gstCore.isValidGSTIN(String(p.gstin).trim().toUpperCase())) errors.push('gstin-invalid');
   }
   if (p && p.phone) {
     const digits = String(p.phone).replace(/[\s-]/g, '').replace(/^\+91/, '');
@@ -99,11 +99,11 @@ function validateProfile(p) {
 function validateLine(line) {
   const errors = [];
   if (!line || typeof line.name !== 'string' || !line.name.trim()) errors.push('name-required');
-  if (!line || !gst.isValidHSN(String(line.hsn || ''))) errors.push('hsn-invalid');
+  if (!line || !gstCore.isValidHSN(String(line.hsn || ''))) errors.push('hsn-invalid');
   if (!line || !Number.isInteger(line.qty) || line.qty <= 0) errors.push('qty-invalid');
   if (!line || !Number.isInteger(line.unitPricePaise) || line.unitPricePaise < 0) errors.push('price-invalid');
   if (!line || typeof line.discountPct !== 'number' || line.discountPct < 0 || line.discountPct > 100) errors.push('discount-invalid');
-  if (!line || !gst.GST_SLABS.includes(line.taxRatePct)) errors.push('rate-invalid');
+  if (!line || !gstCore.GST_SLABS.includes(line.taxRatePct)) errors.push('rate-invalid');
   return errors;
 }
 
@@ -112,7 +112,7 @@ function validateInvoiceDraft(draft) {
   const errors = [];
   if (!draft || typeof draft.partyName !== 'string' || !draft.partyName.trim()) errors.push('party-required');
   if (draft && draft.partyGstin) {
-    if (!gst.isValidGSTIN(String(draft.partyGstin).trim().toUpperCase())) errors.push('party-gstin-invalid');
+    if (!gstCore.isValidGSTIN(String(draft.partyGstin).trim().toUpperCase())) errors.push('party-gstin-invalid');
   }
   if (!draft || !STATES.some((s) => s.code === draft.buyerState)) errors.push('buyerstate-required');
   if (!draft || !Array.isArray(draft.lines) || draft.lines.length === 0) errors.push('need-line');
@@ -126,7 +126,7 @@ function validateInvoiceDraft(draft) {
 
 /** Totals for a set of lines, via core calcInvoice. No number assigned. */
 function buildTotals(lines, intraState) {
-  const calc = gst.calcInvoice(lines.map((l) => ({
+  const calc = gstCore.calcInvoice(lines.map((l) => ({
     qty: l.qty,
     unitPricePaise: l.unitPricePaise,
     discountPct: l.discountPct || 0,
@@ -210,8 +210,8 @@ function createInvoiceDraft(opts) {
  */
 function finalizeInvoice(draft, profile, date) {
   const d = date instanceof Date ? date : new Date(date || draft.date);
-  const fy = gst.financialYear(d);
-  const number = gst.invoiceNumber(profile.invoicePrefix, fy, profile.nextSeq);
+  const fy = gstCore.financialYear(d);
+  const number = gstCore.invoiceNumber(profile.invoicePrefix, fy, profile.nextSeq);
   const invoice = Object.assign({}, draft, { number, fy, date: todayISO(d), status: 'saved' });
   const nextProfile = Object.assign({}, profile, { nextSeq: profile.nextSeq + 1 });
   return { invoice, profile: nextProfile };
@@ -245,7 +245,7 @@ function whatsappText(invoice, profile) {
     kind + ' ' + (invoice.number || '(draft)') + ' — ' + (profile.name || ''),
     'Date: ' + invoice.date,
     'Party: ' + invoice.partyName,
-    'Total: ' + gst.formatINR(invoice.totals.roundedTotalPaise),
+    'Total: ' + gstCore.formatINR(invoice.totals.roundedTotalPaise),
   ];
   if (profile.upiId) out.push('Pay via UPI: ' + profile.upiId);
   if (invoice.linkedInvoiceNumber) out.push('Against invoice: ' + invoice.linkedInvoiceNumber);
@@ -257,7 +257,7 @@ function whatsappUrl(invoice, profile) {
   return 'https://wa.me/?text=' + encodeURIComponent(whatsappText(invoice, profile));
 }
 
-const api = {
+const invoiceApi = {
   STATES, stateName, isIntraState, rupeesToPaise,
   validateProfile, validateLine, validateInvoiceDraft,
   buildTotals, negateTotals, createInvoiceDraft, finalizeInvoice,
@@ -265,8 +265,8 @@ const api = {
 };
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
+  module.exports = invoiceApi;
 } else {
   window.UdyamSetu = window.UdyamSetu || {};
-  window.UdyamSetu.invoice = api;
+  window.UdyamSetu.invoice = invoiceApi;
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,7 +12,15 @@
 <script src="../core/gst.js" defer></script>
 <script src="store.js" defer></script>
 <script src="invoice.js" defer></script>
+<script src="party.js" defer></script>
+<script src="inventory.js" defer></script>
+<script src="gst-reports.js" defer></script>
+<script src="einvoice.js" defer></script>
+<script src="payroll.js" defer></script>
+<script src="reports.js" defer></script>
+<script src="i18n.js" defer></script>
 <script src="app.js" defer></script>
+<script src="app12.js" defer></script>
 </head>
 <body>
 <header class="app-header">
@@ -23,13 +31,18 @@
       <p class="tagline" data-i18n="tagline">Chhoti dukaan ka GST billing — free, offline</p>
     </div>
   </div>
-  <button id="langToggle" class="btn btn-ghost" type="button">English</button>
+  <select id="langSelect" class="lang-select" aria-label="Language / Bhasha"></select>
 </header>
 
 <nav class="tabs" aria-label="Sections">
   <button class="tab active" data-tab="setup" type="button" data-i18n="tabSetup">Setup</button>
   <button class="tab" data-tab="billing" type="button" data-i18n="tabBilling">Naya Bill</button>
   <button class="tab" data-tab="list" type="button" data-i18n="tabList">Bill List</button>
+  <button class="tab" data-tab="party" type="button" data-i18n="tabParty">Party / Udhaar</button>
+  <button class="tab" data-tab="stock" type="button" data-i18n="tabStock">Stock</button>
+  <button class="tab" data-tab="gst" type="button" data-i18n="tabGst">GST Report</button>
+  <button class="tab" data-tab="payroll" type="button" data-i18n="tabPayroll">Salary</button>
+  <button class="tab" data-tab="reports" type="button" data-i18n="tabReports">Reports</button>
 </nav>
 
 <main id="app">
@@ -153,6 +166,229 @@
       <button id="debitNoteBtn" class="btn btn-ghost" type="button" data-i18n="debitNote">Debit Note banayein</button>
     </div>
     <p class="hint" data-i18n="noteHint">Credit Note = wapas / kami (negative). Debit Note = extra charge (positive). Dono purane bill se judte hain.</p>
+  </section>
+
+  <!-- ============ PARTY / UDHAAR ============ -->
+  <section id="tab-party" class="view" hidden>
+    <h2 data-i18n="partyTitle">Party / Udhaar — Khata</h2>
+    <p class="hint" data-i18n="hintParty">Add customers / suppliers, record udhaar, receive payments. Positive balance = party owes you; negative = you owe the party.</p>
+    <form id="partyForm" novalidate>
+      <label class="field"><span>Party ka naam *</span>
+        <input id="pName" type="text" placeholder="Jaise: Ramesh Kumar"></label>
+      <div class="field-row">
+        <label class="field"><span>Type</span>
+          <select id="pType"><option value="customer">Customer</option><option value="supplier">Supplier</option></select></label>
+        <label class="field"><span>Rajya / State</span><select id="pState"></select></label>
+      </div>
+      <label class="field"><span>Phone (optional)</span>
+        <input id="pPhone" type="tel" inputmode="tel" placeholder="98765 43210"></label>
+      <label class="field"><span>GSTIN (optional)</span>
+        <input id="pGstin" type="text" inputmode="latin" autocapitalize="characters" spellcheck="false" maxlength="15" placeholder="22AAAAA0000A1Z5"></label>
+      <div class="field-row">
+        <label class="field"><span>Opening balance ₹</span>
+          <input id="pOpening" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+        <label class="field"><span>Balance kaisa hai?</span>
+          <select id="pOpeningDir"><option value="receivable">Party ko dena hai (lena)</option><option value="payable">Humko dena hai</option><option value="none">Zero / clear</option></select></label>
+      </div>
+      <p id="partyMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Party Save Karein</button>
+    </form>
+    <h3>Parties</h3>
+    <div id="partyList" class="invoice-list"></div>
+    <div id="partyDetail" hidden>
+      <h3 id="pdName"></h3>
+      <div id="pdStatement"></div>
+      <form id="entryForm" novalidate>
+        <div class="field-row">
+          <label class="field"><span>Entry kaisi hai?</span><select id="eKind"></select></label>
+          <label class="field"><span>Rashi ₹ *</span>
+            <input id="eAmount" type="text" inputmode="decimal" placeholder="0.00"></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Tareekh / Date</span><input id="eDate" type="date"></label>
+          <label class="field"><span>Bill No. (optional)</span><input id="eLinked" type="text" placeholder="INV/2026-27/0001"></label>
+        </div>
+        <label class="field"><span>Note (optional)</span><input id="eNote" type="text" placeholder="Jaise: Rice udhaar"></label>
+        <p id="entryMsg" class="msg" role="status"></p>
+        <button class="btn btn-primary" type="submit">Entry Jodein</button>
+      </form>
+    </div>
+    <h3>Udhaar Reminder — kisko yaad dilayein</h3>
+    <div id="dueList" class="invoice-list"></div>
+  </section>
+
+  <!-- ============ STOCK ============ -->
+  <section id="tab-stock" class="view" hidden>
+    <h2 data-i18n="stockTitle">Stock — Inventory</h2>
+    <p class="hint" data-i18n="hintStock">Add items, increase / decrease stock, track batches + expiry. Saving a bill reduces stock automatically for items matched by HSN / name.</p>
+    <form id="itemForm" novalidate>
+      <label class="field"><span>Item ka naam *</span>
+        <input id="iName" type="text" placeholder="Jaise: Rice 1kg"></label>
+      <div class="field-row">
+        <label class="field"><span>HSN</span><input id="iHsn" type="text" inputmode="numeric" maxlength="8" placeholder="1001"></label>
+        <label class="field"><span>Unit</span>
+          <select id="iUnit"><option value="pcs">pcs</option><option value="kg">kg</option><option value="ltr">ltr</option><option value="box">box</option><option value="mtr">mtr</option></select></label>
+        <label class="field"><span>GST %</span><select id="iRate"></select></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Kharid price ₹</span><input id="iPurchase" type="text" inputmode="decimal" placeholder="0.00"></label>
+        <label class="field"><span>Bechne ka price ₹</span><input id="iSale" type="text" inputmode="decimal" placeholder="0.00"></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Reorder level (qty)</span><input id="iReorder" type="number" min="0" step="1" value="0"></label>
+        <label class="field"><span>Godown</span><input id="iGodown" type="text" value="Main"></label>
+      </div>
+      <p id="itemMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Item Save Karein</button>
+    </form>
+    <h3>Items — stock ke saath</h3>
+    <div id="itemList" class="invoice-list"></div>
+    <h3>Stock badhayein / ghataayein</h3>
+    <form id="moveForm" novalidate>
+      <div class="field-row">
+        <label class="field"><span>Item</span><select id="mItem"></select></label>
+        <label class="field"><span>Kaam</span>
+          <select id="mKind"><option value="purchase">Kharid (stock +)</option><option value="sale">Becha (stock −)</option><option value="adjust">Adjust (+/−)</option></select></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Qty</span><input id="mQty" type="number" min="0" step="0.001" placeholder="0"></label>
+        <label class="field"><span>Godown</span><input id="mGodown" type="text" value="Main"></label>
+      </div>
+      <label class="field"><span>Note (optional)</span><input id="mNote" type="text"></label>
+      <p id="moveMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Movement Save Karein</button>
+    </form>
+    <h3>Batch + Expiry</h3>
+    <form id="batchForm" novalidate>
+      <div class="field-row">
+        <label class="field"><span>Item</span><select id="bItem"></select></label>
+        <label class="field"><span>Batch No. *</span><input id="bNo" type="text" placeholder="B-101"></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Qty *</span><input id="bQty" type="number" min="0" step="0.001" placeholder="0"></label>
+        <label class="field"><span>Expiry date</span><input id="bExpiry" type="date"></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Godown</span><input id="bGodown" type="text" value="Main"></label>
+        <label class="field"><span>Kharid price ₹</span><input id="bPrice" type="text" inputmode="decimal" placeholder="0.00"></label>
+      </div>
+      <p class="hint">Batch save karte hi utni qty stock me bhi jud jayegi (purchase movement).</p>
+      <p id="batchMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Batch Save Karein</button>
+    </form>
+    <h3>Low Stock + Expiring (30 din)</h3>
+    <div id="stockAlerts"></div>
+  </section>
+
+  <!-- ============ GST REPORTS ============ -->
+  <section id="tab-gst" class="view" hidden>
+    <h2 data-i18n="gstTitle">GST Report — GSTR-1 / 3B / 2A-2B</h2>
+    <p class="hint" data-i18n="hintGst">These reports are DRAFTS — verify by uploading on the portal. The app does not file; enter ITC yourself from portal 2B.</p>
+    <label class="field"><span>Mahina / Month</span><input id="gMonth" type="month"></label>
+    <div class="btn-row wrap">
+      <button id="gGstr1Btn" class="btn btn-primary" type="button">GSTR-1 Dekhein</button>
+      <button id="gGstr3bBtn" class="btn" type="button">GSTR-3B Dekhein</button>
+    </div>
+    <h3>ITC (portal 2B se — khud bharein, ₹)</h3>
+    <div class="field-row">
+      <label class="field"><span>IGST ₹</span><input id="itcIgst" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+      <label class="field"><span>CGST ₹</span><input id="itcCgst" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+      <label class="field"><span>SGST ₹</span><input id="itcSgst" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+    </div>
+    <div id="gstOut"></div>
+    <div class="btn-row wrap">
+      <button id="dlGstr1" class="btn" type="button">GSTR-1 JSON Download</button>
+      <button id="dlGstr3b" class="btn" type="button">GSTR-3B JSON Download</button>
+    </div>
+    <h3>GSTR-2A / 2B Reconciliation</h3>
+    <p class="hint">Portal se downloaded 2B JSON yahan paste karein — app apne bills se compare karega (portal se direct download nahi hota).</p>
+    <label class="field"><span>2B JSON (array paste karein)</span>
+      <textarea id="portal2b" rows="4" placeholder='[{"gstin":"...","invoiceNumber":"...","date":"2026-11-10","taxablePaise":100000,"igstPaise":18000,"cgstPaise":0,"sgstPaise":0}]'></textarea></label>
+    <button id="reconBtn" class="btn btn-primary" type="button">Compare Karein</button>
+    <div id="reconOut"></div>
+    <h3>e-Invoice / e-Way Bill JSON (DRAFT)</h3>
+    <p class="hint">IRN / e-way bill portal/GSP se banta hai — ye sirf JSON draft hai, filing nahi. Credentials app me store nahi hote.</p>
+    <label class="field"><span>Bill chunein (saved invoice)</span><select id="eiInvoice"></select></label>
+    <label class="field"><span>Distance (km, e-way bill ke liye)</span><input id="eiDistance" type="number" min="0" step="1" placeholder="0"></label>
+    <div class="btn-row wrap">
+      <button id="dlEinvoice" class="btn" type="button">e-Invoice JSON</button>
+      <button id="dlEway" class="btn" type="button">e-Way Bill JSON</button>
+    </div>
+    <p id="gstMsg" class="msg" role="status"></p>
+  </section>
+
+  <!-- ============ PAYROLL ============ -->
+  <section id="tab-payroll" class="view" hidden>
+    <h2 data-i18n="payrollTitle">Salary — Payroll-lite</h2>
+    <p class="hint" data-i18n="hintPayroll">Enter PF / ESI / PT / TDS rates after confirming with your CA — the app assumes no statutory rate (default 0).</p>
+    <form id="empForm" novalidate>
+      <label class="field"><span>Karamchari ka naam *</span>
+        <input id="emName" type="text" placeholder="Jaise: Raju"></label>
+      <div class="field-row">
+        <label class="field"><span>Role</span><input id="emRole" type="text" placeholder="Helper"></label>
+        <label class="field"><span>Monthly salary ₹ *</span><input id="emSalary" type="text" inputmode="decimal" placeholder="0.00"></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>PF %</span><input id="emPf" type="number" min="0" max="100" step="0.01" value="0"></label>
+        <label class="field"><span>ESI %</span><input id="emEsi" type="number" min="0" max="100" step="0.01" value="0"></label>
+        <label class="field"><span>PT ₹/mahina</span><input id="emPt" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+        <label class="field"><span>TDS ₹/mahina</span><input id="emTds" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+      </div>
+      <p id="empMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Employee Save Karein</button>
+    </form>
+    <h3>Employees</h3>
+    <div id="empList" class="invoice-list"></div>
+    <div id="payrollDetail" hidden>
+      <h3 id="pdEmpName"></h3>
+      <form id="attForm" novalidate>
+        <div class="field-row">
+          <label class="field"><span>Mahina / Month</span><input id="aMonth" type="month"></label>
+          <label class="field"><span>Present din</span><input id="aPresent" type="number" min="0" step="1" placeholder="0"></label>
+          <label class="field"><span>Kul din</span><input id="aTotal" type="number" min="1" max="31" step="1" value="30"></label>
+        </div>
+        <label class="field"><span>Advance ₹ (is mahine ka)</span><input id="aAdvance" type="text" inputmode="decimal" placeholder="0.00" value="0"></label>
+        <p id="attMsg" class="msg" role="status"></p>
+        <div class="btn-row wrap">
+          <button class="btn btn-primary" type="submit">Payslip Banayein</button>
+          <button id="printPayslipBtn" class="btn" type="button">Payslip Print Karein</button>
+        </div>
+      </form>
+      <pre id="payslipOut" class="invoice-doc" style="white-space:pre-wrap"></pre>
+    </div>
+  </section>
+
+  <!-- ============ REPORTS ============ -->
+  <section id="tab-reports" class="view" hidden>
+    <h2 data-i18n="reportsTitle">Reports — Hisab + Export</h2>
+    <p class="hint" data-i18n="hintReports">Tally CSV is BETA — CA pilot pending, not "CA-ready". Confirm with your CA before using it.</p>
+    <div class="field-row">
+      <label class="field"><span>Se / From</span><input id="rFrom" type="date"></label>
+      <label class="field"><span>Tak / To</span><input id="rTo" type="date"></label>
+    </div>
+    <button id="repBtn" class="btn btn-primary" type="button">Report Dekhein</button>
+    <div id="repOut"></div>
+    <h3>Kharcha / Expense jodein</h3>
+    <form id="expForm" novalidate>
+      <div class="field-row">
+        <label class="field"><span>Tareekh / Date</span><input id="xDate" type="date"></label>
+        <label class="field"><span>Category</span><input id="xCategory" type="text" placeholder="Rent"></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Rashi ₹ *</span><input id="xAmount" type="text" inputmode="decimal" placeholder="0.00"></label>
+        <label class="field"><span>Note</span><input id="xNote" type="text"></label>
+      </div>
+      <p id="expMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit">Expense Save Karein</button>
+    </form>
+    <h3>Export</h3>
+    <div class="btn-row wrap">
+      <button id="expInvCsv" class="btn" type="button">Bills CSV</button>
+      <button id="expPartyCsv" class="btn" type="button">Party CSV</button>
+      <button id="expStockCsv" class="btn" type="button">Stock CSV</button>
+      <button id="expTallyCsv" class="btn" type="button">Tally CSV (BETA)</button>
+      <button id="expBundle" class="btn" type="button">Full Backup JSON</button>
+    </div>
   </section>
 </main>
 

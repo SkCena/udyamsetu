@@ -8,102 +8,21 @@
   const invApi = window.UdyamSetu.invoice;
   const store = new storeApi.Store();
 
-  // ---------------- i18n: Hindi first, English toggle ----------------
-  const I18N = {
-    hi: {
-      tagline: 'Chhoti dukaan ka GST billing — free, offline',
-      tabSetup: 'Setup', tabBilling: 'Naya Bill', tabList: 'Bill List',
-      setupTitle: 'Vyavsay Setup — Business Setup',
-      setupHint: 'Ek baar bhar dein — har bill par yehi details aayengi. Badal bhi sakte hain.',
-      bizName: 'Dukaan / Business ka naam *', bizNamePh: 'Jaise: Sharma Kirana Store',
-      bizGstin: 'GSTIN (agar hai — optional)', bizGstinPh: '22AAAAA0000A1Z5',
-      bizPhone: 'Phone (optional)', bizAddress: 'Pata / Address', bizAddressPh: 'Dukaan ka pata',
-      logoLabel: 'Logo (optional)', logoRemove: 'Logo hatayein',
-      upiLabel: 'UPI ID (payment ke liye, optional)',
-      invPrefix: 'Bill series prefix', nextSeq: 'Agla bill number',
-      sellerState: 'Aapka rajya / State (seller)',
-      saveSetup: 'Setup Save Karein', setupSaved: 'Setup save ho gaya ✓',
-      setupInvalid: 'Kuch galat hai — laal wale field check karein.',
-      gstinError: 'GSTIN galat hai — 15 character, sahi format mein likhein.',
-      billingTitle: 'Naya Bill — New Invoice',
-      setupWarn: 'Pehle Setup mein dukaan ka naam bharein — phir bill banega.',
-      partyName: 'Graahak / Party ka naam *', partyNamePh: 'Jaise: Ramesh Kumar',
-      partyGstin: 'Party GSTIN (optional)',
-      buyerState: 'Graahak ka rajya / State (buyer)',
-      taxKind: 'Tax:', linesTitle: 'Samaan — Items', addLine: '+ Item jodein',
-      taxable: 'Taxable', roundOff: 'Round off', grandTotal: 'Kul Total',
-      saveDraft: 'Draft Save', saveInvoice: 'Bill Save Karein', clearForm: 'Form saaf karein',
-      draftSaved: 'Draft save ho gaya ✓ (number abhi nahi laga)',
-      invoiceSaved: 'Bill save ho gaya ✓',
-      billInvalid: 'Bill mein kuch galat hai — check karein.',
-      listTitle: 'Bill List — Saved Bills',
-      listHint: 'Bill par tap karein — dekhein, print karein, WhatsApp par bhejein.',
-      noInvoices: 'Abhi koi bill nahi hai. Pehla bill "Naya Bill" se banayein.',
-      backToList: '← Bill List',
-      printA4: 'Print — A4', printThermal: 'Print — 80mm',
-      whatsapp: 'WhatsApp par bhejein',
-      creditNote: 'Credit Note banayein', debitNote: 'Debit Note banayein',
-      noteHint: 'Credit Note = wapas / kami (negative). Debit Note = extra charge (positive). Dono purane bill se judte hain.',
-      footer: 'UdyamSetu — free, offline, aapka data aapke phone par hi rehta hai.',
-      itemNamePh: 'Item ka naam', hsnPh: 'HSN (4/6/8 digit)',
-      noteAgainst: 'Note ban raha hai — bill ',
-      noteCredit: 'Credit Note', noteDebit: 'Debit Note', noteInvoice: 'Bill',
-      draftBadge: 'DRAFT', against: 'Bill: ',
-      savedInvoices: 'bills',
-    },
-    en: {
-      tagline: 'GST billing for small shops — free, offline',
-      tabSetup: 'Setup', tabBilling: 'New Bill', tabList: 'Bill List',
-      setupTitle: 'Business Setup',
-      setupHint: 'Fill once — these details appear on every bill. You can change them later.',
-      bizName: 'Shop / Business name *', bizNamePh: 'e.g. Sharma Kirana Store',
-      bizGstin: 'GSTIN (if you have one — optional)', bizGstinPh: '22AAAAA0000A1Z5',
-      bizPhone: 'Phone (optional)', bizAddress: 'Address', bizAddressPh: 'Shop address',
-      logoLabel: 'Logo (optional)', logoRemove: 'Remove logo',
-      upiLabel: 'UPI ID (for payment, optional)',
-      invPrefix: 'Bill series prefix', nextSeq: 'Next bill number',
-      sellerState: 'Your state (seller)',
-      saveSetup: 'Save Setup', setupSaved: 'Setup saved ✓',
-      setupInvalid: 'Something is wrong — check the marked fields.',
-      gstinError: 'GSTIN is wrong — 15 characters, correct format.',
-      billingTitle: 'New Bill — Invoice',
-      setupWarn: 'First fill the shop name in Setup — then make a bill.',
-      partyName: 'Customer / Party name *', partyNamePh: 'e.g. Ramesh Kumar',
-      partyGstin: 'Party GSTIN (optional)',
-      buyerState: 'Customer state (buyer)',
-      taxKind: 'Tax:', linesTitle: 'Items', addLine: '+ Add item',
-      taxable: 'Taxable', roundOff: 'Round off', grandTotal: 'Grand Total',
-      saveDraft: 'Save Draft', saveInvoice: 'Save Bill', clearForm: 'Clear form',
-      draftSaved: 'Draft saved ✓ (no number yet)',
-      invoiceSaved: 'Bill saved ✓',
-      billInvalid: 'Something is wrong in the bill — please check.',
-      listTitle: 'Bill List — Saved Bills',
-      listHint: 'Tap a bill to view, print or share it on WhatsApp.',
-      noInvoices: 'No bills yet. Make the first one from "New Bill".',
-      backToList: '← Bill List',
-      printA4: 'Print — A4', printThermal: 'Print — 80mm',
-      whatsapp: 'Share on WhatsApp',
-      creditNote: 'Make Credit Note', debitNote: 'Make Debit Note',
-      noteHint: 'Credit Note = return / reduction (negative). Debit Note = extra charge (positive). Both link to the old bill.',
-      footer: 'UdyamSetu — free, offline, your data stays on your phone.',
-      itemNamePh: 'Item name', hsnPh: 'HSN (4/6/8 digits)',
-      noteAgainst: 'Making a note against bill ',
-      noteCredit: 'Credit Note', noteDebit: 'Debit Note', noteInvoice: 'Invoice',
-      draftBadge: 'DRAFT', against: 'Against: ',
-      savedInvoices: 'bills',
-    },
-  };
-  let lang = 'hi';
-  try { lang = localStorage.getItem('udyamsetu.lang') || 'hi'; } catch (e) { /* ignore */ }
-  function t(key) { return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key; }
+  // ---------------- i18n: Language LOCK (2026-11-22) ----------------
+  // Primary language is ENGLISH (default). Other Indian languages switch
+  // via the language tab in the header. All strings live in site/i18n.js —
+  // this file only uses them, never defines them.
+  const i18nMod = window.UdyamSetu.i18n;
+  let lang = i18nMod.getLang();
+  function t(key) { return i18nMod.t(key, lang); }
 
   function applyLang() {
     document.documentElement.lang = lang;
+    document.documentElement.dir = i18nMod.dir(lang);
     document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.getAttribute('data-i18n')); });
     document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
-    const toggle = document.getElementById('langToggle');
-    toggle.textContent = lang === 'hi' ? 'English' : 'हिंदी';
-    try { localStorage.setItem('udyamsetu.lang', lang); } catch (e) { /* ignore */ }
+    const sel = document.getElementById('langSelect');
+    if (sel) sel.value = lang;
     renderLines();
     updateTaxKind();
   }
@@ -122,11 +41,15 @@
   }
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === name));
-    ['setup', 'billing', 'list', 'detail'].forEach((n) => {
+    ['setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports'].forEach((n) => {
       $('tab-' + n).hidden = (n !== name);
     });
     if (name === 'list') renderList();
     if (name === 'billing') $('setupWarn').hidden = !!(profile && profile.name);
+    // Phase 1.2 tabs live in app12.js — render on show, if loaded.
+    if (window.UdyamSetu && window.UdyamSetu.ui12 && window.UdyamSetu.ui12.onShow) {
+      window.UdyamSetu.ui12.onShow(name);
+    }
     window.scrollTo(0, 0);
   }
 
@@ -331,6 +254,10 @@
     const done = invApi.finalizeInvoice(draft, profile, new Date());
     await store.saveInvoice(done.invoice);
     await store.saveProfile(done.profile);
+    // Phase 1.2: bill save hote hi stock ghatao (jo item HSN/naam se mile).
+    if (window.UdyamSetu && window.UdyamSetu.ui12 && window.UdyamSetu.ui12.onInvoiceSaved) {
+      try { await window.UdyamSetu.ui12.onInvoiceSaved(done.invoice); } catch (e) { /* stock hook fail != bill fail */ }
+    }
     profile = done.profile;
     fillSetupForm();
     msg.textContent = t('invoiceSaved') + ' — ' + done.invoice.number;
@@ -448,7 +375,10 @@
 
     document.querySelectorAll('.tab').forEach((b) =>
       b.addEventListener('click', () => showTab(b.getAttribute('data-tab'))));
-    $('langToggle').addEventListener('click', () => { lang = lang === 'hi' ? 'en' : 'hi'; applyLang(); });
+    const langSel = $('langSelect');
+    langSel.innerHTML = i18nMod.SUPPORTED_LANGS.map((l) =>
+      '<option value="' + l.code + '"' + (l.code === lang ? ' selected' : '') + '>' + esc(l.native) + '</option>').join('');
+    langSel.addEventListener('change', () => { lang = i18nMod.setLang(langSel.value); applyLang(); });
 
     $('bizGstin').addEventListener('input', (e) => {
       const v = e.target.value.trim().toUpperCase();

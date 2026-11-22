@@ -2,14 +2,22 @@
 // No network calls are made by the app itself; the cache only holds local files.
 'use strict';
 
-const CACHE = 'udyamsetu-site-v1';
+const CACHE = 'udyamsetu-site-v3';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './app12.js',
   './store.js',
   './invoice.js',
+  './party.js',
+  './inventory.js',
+  './gst-reports.js',
+  './einvoice.js',
+  './payroll.js',
+  './reports.js',
+  './i18n.js',
   './manifest.json',
   './icon.svg',
   '../core/gst.js',
