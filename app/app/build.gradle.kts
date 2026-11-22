@@ -47,12 +47,21 @@ android {
         compose = true
     }
 
-    // Google auth jars (pulled in by the Drive backup dependencies) both
-    // ship META-INF/INDEX.LIST — without this exclude, CI run #9 failed at
-    // :app:mergeDebugJavaResource with DuplicateRelativeFileException.
+    // Google/Apache jars (pulled in by the Drive backup dependencies) ship
+    // the same META-INF text files twice — CI run #9 failed on INDEX.LIST,
+    // run #10 on DEPENDENCIES. Exclude the whole harmless set at once
+    // instead of one file per failed run. (META-INF/services is NOT
+    // excluded — ServiceLoader entries must stay.)
     packaging {
         resources {
             excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/NOTICE.md"
         }
     }
 }
