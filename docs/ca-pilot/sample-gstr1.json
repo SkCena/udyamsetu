@@ -1,0 +1,105 @@
+{
+  "gstin": "22AAAAA0000A1ZC",
+  "fp": "112026",
+  "b2b": [
+    {
+      "ctin": "27AAAPL1234C1ZE",
+      "inv": [
+        {
+          "inum": "INV/2026-27/0001",
+          "idt": "05/11/2026",
+          "val": 1178,
+          "pos": "21",
+          "rchrg": "N",
+          "inv_typ": "R",
+          "itms": [
+            {
+              "num": 1,
+              "itm_det": {
+                "txval": 1000,
+                "rt": 5,
+                "iamt": 0,
+                "camt": 25,
+                "samt": 25
+              }
+            },
+            {
+              "num": 2,
+              "itm_det": {
+                "txval": 121.5,
+                "rt": 5,
+                "iamt": 0,
+                "camt": 3.04,
+                "samt": 3.04
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ctin": "07AAAAA0000A1Z5",
+      "inv": [
+        {
+          "inum": "INV/2026-27/0002",
+          "idt": "12/11/2026",
+          "val": 2100,
+          "pos": "07",
+          "rchrg": "N",
+          "inv_typ": "R",
+          "itms": [
+            {
+              "num": 1,
+              "itm_det": {
+                "txval": 2000,
+                "rt": 5,
+                "iamt": 100,
+                "camt": 0,
+                "samt": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "b2cl": [],
+  "b2cs": [
+    {
+      "sply_ty": "INTRA",
+      "rt": 5,
+      "typ": "OE",
+      "txval": 480,
+      "iamt": 0,
+      "camt": 12,
+      "samt": 12,
+      "csamt": 0
+    }
+  ],
+  "cdnr": [
+    {
+      "ctin": "27AAAPL1234C1ZE",
+      "nt": [
+        {
+          "nt_num": "INV/2026-27/0004",
+          "nt_dt": "20/11/2026",
+          "ntty": "C",
+          "rsn": "Others",
+          "val": -525,
+          "itms": [
+            {
+              "num": 1,
+              "itm_det": {
+                "txval": -500,
+                "rt": 5,
+                "iamt": 0,
+                "camt": -12.5,
+                "samt": -12.5
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+"# BETA — CA pilot pending: Tally-compatible CSV, ""CA-ready"" NAHI hai"
+Date,Voucher Type,Voucher No,Party,Debit Ledger,Debit Amount,Credit Ledger,Credit Amount,Narration
+2026-11-05,Sales,INV/2026-27/0001,Ramesh Kumar,Ramesh Kumar,1178.00,,,Sales INV/2026-27/0001 — Ramesh Kumar
+2026-11-05,Sales,INV/2026-27/0001,Ramesh Kumar,,,Sales,1121.50,Sales INV/2026-27/0001 — Ramesh Kumar
+2026-11-05,Sales,INV/2026-27/0001,Ramesh Kumar,,,CGST / SGST Payable,56.08,Sales INV/2026-27/0001 — Ramesh Kumar
+2026-11-12,Sales,INV/2026-27/0002,Delhi Traders,Delhi Traders,2100.00,,,Sales INV/2026-27/0002 — Delhi Traders
+2026-11-12,Sales,INV/2026-27/0002,Delhi Traders,,,Sales,2000.00,Sales INV/2026-27/0002 — Delhi Traders
+2026-11-12,Sales,INV/2026-27/0002,Delhi Traders,,,IGST Payable,100.00,Sales INV/2026-27/0002 — Delhi Traders
+2026-11-18,Sales,INV/2026-27/0003,Walk-in Customer,Walk-in Customer,504.00,,,Sales INV/2026-27/0003 — Walk-in Customer
+2026-11-18,Sales,INV/2026-27/0003,Walk-in Customer,,,Sales,480.00,Sales INV/2026-27/0003 — Walk-in Customer
+2026-11-18,Sales,INV/2026-27/0003,Walk-in Customer,,,CGST / SGST Payable,24.00,Sales INV/2026-27/0003 — Walk-in Customer
+2026-11-20,Credit Note,INV/2026-27/0004,Ramesh Kumar,Ramesh Kumar,-525.00,,,Credit Note INV/2026-27/0004 — Ramesh Kumar
+2026-11-20,Credit Note,INV/2026-27/0004,Ramesh Kumar,,,Sales,-500.00,Credit Note INV/2026-27/0004 — Ramesh Kumar
+2026-11-20,Credit Note,INV/2026-27/0004,Ramesh Kumar,,,CGST / SGST Payable,-25.00,Credit Note INV/2026-27/0004 — Ramesh Kumar

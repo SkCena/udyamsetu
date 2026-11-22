@@ -162,6 +162,8 @@ fun HomeScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         }
+        // Star prompt (support): polite, dismissible — same card as More.
+        item { StarCard(vm) }
         item {
             TextButton(onClick = { nav.navigate(Routes.ABOUT) }) {
                 Text(stringResource(R.string.tab_about))

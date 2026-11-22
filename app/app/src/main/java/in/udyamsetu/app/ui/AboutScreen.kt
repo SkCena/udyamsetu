@@ -40,6 +40,8 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SkCena/udyamsetu/releases")))
                 }) { Text("APK — GitHub Releases") }
             }
+            // Star prompt (support): same ask as Home + More.
+            StarCard(vm)
         }
     }
 }

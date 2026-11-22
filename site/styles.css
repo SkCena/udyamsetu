@@ -7,6 +7,9 @@
   --navy-dark: #16233D;
   --gold-soft: #F7EFCE;
   --navy-ink: #16233D;
+  --header-from: #16233D;
+  --header-to: #1B2A4A;
+  --header-line: #C9A227;
   --ink: #1f2937;
   --muted: #6b7280;
   --line: #d1d5db;
@@ -27,6 +30,9 @@ html[data-theme="dark"] {
   --navy-dark: #C9A227;
   --gold-soft: #232E47;
   --navy-ink: #E8C766;
+  --header-from: #0F1B2E;
+  --header-to: #16233D;
+  --header-line: #C9A227;
   --ink: #f1f5f9;
   --muted: #94a3b8;
   --line: #334155;
@@ -41,6 +47,56 @@ html[data-theme="dark"] {
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
+/* ---------- Colour schemes (no green anywhere) ----------
+   data-scheme on <html>: navy-gold (default, the :root values above),
+   midnight, indigo, copper, amber. Each scheme re-colours the same
+   variables in light and in dark, so Light/Dark still works inside
+   every scheme. Saved in localStorage (udyamsetu.scheme). */
+html[data-scheme="navy-gold"] { /* default — the :root values above */ }
+html[data-scheme="midnight"] {
+  --navy: #1E293B; --navy-dark: #0F172A; --gold: #7C8DB0;
+  --gold-soft: #E8EDF5; --navy-ink: #0F172A;
+  --header-from: #0F172A; --header-to: #1E293B; --header-line: #7C8DB0;
+}
+html[data-theme="dark"][data-scheme="midnight"] {
+  --navy: #A9BCE0; --navy-dark: #8FA3C7; --gold: #A9BCE0;
+  --gold-soft: #1E293B; --navy-ink: #C7D3EA;
+  --bg: #0A0F1C; --card: #131C2E; --field-bg: #0F172A; --soft: #16233A;
+  --header-from: #0A0F1C; --header-to: #131C2E; --header-line: #8FA3C7;
+}
+html[data-scheme="indigo"] {
+  --navy: #3730A3; --navy-dark: #312E81; --gold: #5B54D6;
+  --gold-soft: #EDEBFE; --navy-ink: #312E81;
+  --header-from: #312E81; --header-to: #3730A3; --header-line: #7C74E8;
+}
+html[data-theme="dark"][data-scheme="indigo"] {
+  --navy: #A5A0F0; --navy-dark: #7C74E8; --gold: #A5A0F0;
+  --gold-soft: #262052; --navy-ink: #CFCBFA;
+  --bg: #12102A; --card: #1D1938; --field-bg: #17142E; --soft: #221D45;
+  --header-from: #12102A; --header-to: #1D1938; --header-line: #7C74E8;
+}
+html[data-scheme="copper"] {
+  --navy: #6B3A1F; --navy-dark: #4A2C1A; --gold: #B4653A;
+  --gold-soft: #F7E8DC; --navy-ink: #4A2C1A;
+  --header-from: #4A2C1A; --header-to: #6B3A1F; --header-line: #C08A5A;
+}
+html[data-theme="dark"][data-scheme="copper"] {
+  --navy: #D99A6C; --navy-dark: #B4653A; --gold: #D99A6C;
+  --gold-soft: #3A2417; --navy-ink: #F0C9A8;
+  --bg: #17100B; --card: #241A12; --field-bg: #1D140D; --soft: #2E2115;
+  --header-from: #17100B; --header-to: #241A12; --header-line: #B4653A;
+}
+html[data-scheme="amber"] {
+  --navy: #3F2E04; --navy-dark: #292100; --gold: #B45309;
+  --gold-soft: #FEF3C7; --navy-ink: #3F2E04;
+  --header-from: #292100; --header-to: #3F2E04; --header-line: #D97706;
+}
+html[data-theme="dark"][data-scheme="amber"] {
+  --navy: #FBBF24; --navy-dark: #D97706; --gold: #FBBF24;
+  --gold-soft: #3A2A05; --navy-ink: #FDE68A;
+  --bg: #141007; --card: #1F1908; --field-bg: #171204; --soft: #2A2110;
+  --header-from: #141007; --header-to: #1F1908; --header-line: #D97706;
+}
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -50,8 +106,8 @@ body {
   line-height: 1.5;
 }
 .app-header {
-  background: linear-gradient(135deg, #16233D 0%, #1B2A4A 60%, #16233D 100%);
-  border-bottom: 3px solid #C9A227;
+  background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 60%, var(--header-from) 100%);
+  border-bottom: 3px solid var(--header-line);
   color: #fff;
   padding: 12px 16px;
   display: flex;
@@ -60,15 +116,10 @@ body {
   gap: 12px;
   box-shadow: 0 2px 12px rgba(22, 35, 61, 0.35);
 }
-html[data-theme="dark"] .app-header {
-  background: linear-gradient(135deg, #0F1B2E 0%, #16233D 60%, #0F1B2E 100%);
-  border-bottom: 3px solid #C9A227;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-}
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark {
   width: 42px; height: 42px; border-radius: 12px;
-  background: #C9A227; color: #16233D;
+  background: var(--gold); color: #16233D;
   display: flex; align-items: center; justify-content: center;
   font-size: 24px; font-weight: 700; flex: none;
   box-shadow: var(--shadow-sm);
@@ -99,6 +150,7 @@ html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
   flex: 1 1 20%; padding: 11px 4px; border: 1px solid var(--line); border-bottom: none;
   background: var(--soft); color: var(--muted); font-size: 14px; font-weight: 600;
   border-radius: var(--radius) var(--radius) 0 0; cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
 }
 .tab.active { background: var(--card); color: var(--navy); box-shadow: var(--shadow-sm); }
 main { padding: 0 12px 24px; }
@@ -107,6 +159,12 @@ main { padding: 0 12px 24px; }
   border-radius: 0 var(--radius) var(--radius) var(--radius);
   padding: 16px 14px;
   box-shadow: var(--shadow);
+  animation: viewIn 160ms ease-out;
+}
+@keyframes viewIn { from { opacity: 0.35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .view { animation: none; }
+  .tab { transition: none; }
 }
 .view h2 { margin: 0 0 4px; font-size: 19px; }
 .view h3 { margin: 18px 0 8px; font-size: 16px; }
@@ -200,6 +258,27 @@ html[data-theme="dark"] .btn-primary { color: #16233D; }
 .doc-table th, .doc-table td { border: 1px solid var(--line); padding: 6px; text-align: left; }
 .doc-table th { background: var(--soft); }
 .doc-table td.num, .doc-table th.num { text-align: right; }
+
+/* ---------- Generic card (CA pilot note, etc.) ---------- */
+.card {
+  background: var(--soft); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px; margin: 10px 0;
+}
+.card .hint { margin: 6px 0 10px; }
+
+/* ---------- Invoice templates: look only, totals identical ---------- */
+.tpl-picker { max-width: 320px; margin-bottom: 10px; }
+.share-head { margin: 16px 0 8px; font-size: 16px; }
+.invoice-doc.tpl-modern { border-top: 6px solid var(--gold, #c9a227); }
+.invoice-doc.tpl-modern .doc-head h3 { color: var(--navy-ink, #16233d); }
+.invoice-doc.tpl-modern .trow.grand { background: var(--gold-soft, #f7ecd0); border-radius: 8px; padding: 6px 8px; }
+.invoice-doc.tpl-minimal { border: none; box-shadow: none; background: transparent; padding: 4px; }
+.invoice-doc.tpl-minimal .doc-table th, .invoice-doc.tpl-minimal .doc-table td { border: none; border-bottom: 1px solid var(--line); }
+.invoice-doc.tpl-minimal .doc-table th { background: transparent; }
+.invoice-doc.tpl-thermal { max-width: 320px; margin: 0 auto; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.invoice-doc.tpl-thermal .doc-head { display: block; text-align: center; }
+.invoice-doc.tpl-thermal .doc-table { font-size: 12px; }
+.invoice-doc.tpl-thermal .doc-table th, .invoice-doc.tpl-thermal .doc-table td { padding: 3px; }
 .doc-totals { font-size: 14px; }
 .doc-totals .trow { padding: 2px 0; }
 .app-footer { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 16px 24px; }
@@ -246,6 +325,50 @@ html[data-theme="dark"] .btn-primary { color: #16233D; }
 .guide-card.guide-toggle.collapsed .guide-step { display: none; }
 .apk-list { margin: 0 0 12px; padding-left: 18px; font-size: 14px; }
 .apk-list li { margin-bottom: 6px; }
+
+/* ---------- Star prompt (support) ---------- */
+.star-card {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 16px; background: var(--gold-soft);
+  box-shadow: var(--shadow-sm);
+}
+.star-card h3 { margin-top: 0; color: var(--navy-ink); }
+.star-card p { font-size: 14px; margin: 4px 0 12px; color: var(--navy-ink); }
+.star-card[hidden] { display: none; }
+
+/* ---------- Theme picker (About) ---------- */
+.mode-row, .scheme-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+.mode-btn, .scheme-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px;
+  font-size: 14px; font-weight: 600; border: 1px solid var(--line); border-radius: 20px;
+  background: var(--field-bg); color: var(--ink); cursor: pointer;
+}
+.mode-btn.selected, .scheme-btn.selected {
+  border-color: var(--navy); background: var(--gold-soft); color: var(--navy-ink);
+}
+.scheme-btn .dot {
+  width: 16px; height: 16px; border-radius: 50%; flex: none;
+  background: var(--dot, #C9A227); border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Basic calculator (keypad) ---------- */
+.calc-display {
+  width: 100%; padding: 14px; font-size: 28px; font-weight: 700; text-align: right;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--field-bg); color: var(--ink);
+  min-height: 62px; overflow-x: auto; white-space: nowrap; margin-bottom: 4px;
+}
+.calc-history { text-align: right; color: var(--muted); font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.calc-key {
+  padding: 16px 0; font-size: 20px; font-weight: 700;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--field-bg); color: var(--ink); cursor: pointer;
+}
+.calc-key:active { transform: scale(0.96); background: var(--soft); }
+.calc-key.op { background: var(--gold-soft); color: var(--navy-ink); border-color: var(--navy); }
+.calc-key.eq { background: var(--navy); color: #fff; border-color: var(--navy); }
+html[data-theme="dark"] .calc-key.eq { color: #16233D; }
 .apk-badge {
   display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
   border-radius: 20px; background: #fef3c7; color: #92400e; margin-left: 6px;

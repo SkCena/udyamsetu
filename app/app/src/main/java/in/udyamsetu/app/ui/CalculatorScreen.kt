@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +85,10 @@ fun CalculatorScreen(vm: AppViewModel, nav: NavHostController) {
                         Text("${stringResource(R.string.calc_total)}: ${formatRupees(r.totalPaise)}", fontWeight = FontWeight.Bold)
                     }
                 }
+            }
+            // The standalone basic calculator lives on its own screen.
+            TextButton(onClick = { nav.navigate(Routes.BASIC_CALC) }) {
+                Text(stringResource(R.string.tab_basic_calc))
             }
         }
     }

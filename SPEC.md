@@ -88,7 +88,7 @@ fully, the field labels are the next i18n step.
 ## Commands
 
 ```bash
-# Site tests — 734 tests, all green
+# Site tests — 958 tests, all green
 node core/gst.test.js            # 114
 node site/app.test.js            # 78
 node site/party-inventory.test.js # 87
@@ -100,8 +100,15 @@ node site/views.test.js          # 83 — mobile/desktop views, Home, FTU,
                                  # language prompt, APK markers, GitHub links,
                                  # gst-core sync + Light/Dark theme,
                                  # calculator/guide tabs, dead-button checks
-node site/improvements.test.js   # 101 — bill types, calculator, guide,
-                                 # drive backup config, navy+gold theme
+node site/improvements.test.js   # 114 — bill types, calculator, guide,
+                                 # drive backup config, navy+gold theme,
+                                 # star prompt, 5 colour schemes, basic calc
+node site/basiccalc.test.js      # 47 — standalone basic calculator
+node site/templates.test.js      # 208 — invoice templates + sharing
+node site/ca-pilot.test.js       # 70 — Tally XML + GSTR JSON fixtures
+
+# CA pilot fixtures — regenerate from the Site's own logic
+node tools/gen-ca-pilot-fixtures.js   # writes docs/ca-pilot/
 
 # Browser load smoke — all 12 scripts load in order, handlers run,
 # all 5 Phase 1.2 tabs render
@@ -114,7 +121,7 @@ node tools/sync-site-core.js
 kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar
 java -jar /tmp/gst-test.jar   # 111 tests
 
-# App logic tests (JDK 17 + kotlinc, no Android SDK needed) — 74 tests
+# App logic tests (JDK 17 + kotlinc, no Android SDK needed) — 104 tests
 kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt \
   app/app/src/main/java/in/udyamsetu/app/logic/*.kt \
   app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt \
@@ -255,7 +262,7 @@ docs/                -> Device test cards + notes
   only; add it through the GitHub website the first time — the API
   can't push workflow files). The Gradle project lives in `app/`, so
   CI runs with `working-directory: app`.
-- Host tests green: app logic 74/74, GST core 111/111, Site 734/734,
+- Host tests green: app logic 104/104, GST core 111/111, Site 958/958,
   smoke PASS; all XML parses fine; all string/layout references
   resolve.
 - Still open: the APK hasn't built in CI yet (the workflow isn't in
@@ -280,7 +287,7 @@ docs/                -> Device test cards + notes
   "APK chahiye" badge + APK download link (GitHub Releases, no fake
   `.apk` URL).
 - GitHub link everywhere: header, footer, Home card, About.
-- 734 node tests green; browser load smoke green; 16/16 files HTTP 200.
+- 958 node tests green; browser load smoke green; 16/16 files HTTP 200.
 - Still open: look at it on a real phone (360px) and a real desktop
   (1280px) — the visual check is in the device test card.
 
@@ -313,6 +320,63 @@ docs/                -> Device test cards + notes
 - Rule: the Site must never load anything from outside `site/` —
   Pages only serves that folder.
 
+### Support, themes, More, calculator, templates, sharing (2026-11-22)
+
+- Support: a polite, dismissible "Support UdyamSetu — GitHub pe star
+  dein" card on the Site Home and in the app (Home + More + About).
+  It links to the repo, never nags again once dismissed, and shows no
+  fake star count.
+- Themes: System / Light / Dark plus 5 premium colour schemes —
+  Navy-Gold (default), Midnight, Royal Indigo, Rose Gold/Copper,
+  Charcoal-Amber. No green anywhere. The choice is saved and survives
+  reload (Site: localStorage; app: DataStore + SharedPreferences
+  mirror). Site colours live in CSS variables; the app mirrors them in
+  `Theme.kt`.
+- More tab (app): redesigned into clean sections (Tools / Business /
+  App) with a theme picker and the star card. Smoothness comes from
+  light list animations only — no heavy effects, so it stays smooth on
+  low-end phones.
+- Independent calculator: a standalone basic calculator (+ − × ÷, %,
+  backspace, clear, big display), separate from the GST calculator —
+  Site tab + app screen. Its logic mirrors between `site/basiccalc.js`
+  and `app/.../logic/BasicCalcLogic.kt` and is tested on both sides.
+- Invoice templates: Classic, Modern, Minimal, Thermal 80mm — the user
+  picks one, it is saved, and every template prints the same totals
+  from the shared core (look only). Site: `invoiceTemplateHtml` in
+  `site/invoice.js`; app: template picker + styled preview in
+  `BillingScreen`.
+- Sharing: WhatsApp, SMS, Email, Telegram, copy text, PDF (print →
+  Save as PDF), PNG image, print, and the Android share sheet. The
+  Site uses the Web Share API where the browser has it; where it does
+  not, the button carries the "APK chahiye" badge. The app's share row
+  (after saving a bill, and in the bill list) has all of these — this
+  also fixed a mislabelled button that said "WhatsApp" but opened the
+  generic chooser.
+
+### CA pilot prep (Phase 1.3, 2026-11-22)
+
+- Plan + fixtures in `docs/CA-PILOT.md` and `docs/ca-pilot/` (sample
+  Tally CSV + Tally XML + GSTR-1/3B JSON + the 4 sample bills),
+  generated from the Site's own logic by
+  `tools/gen-ca-pilot-fixtures.js`. `site/ca-pilot.test.js` fails if
+  the committed fixtures drift from the generator.
+- Format check (Tally's own Help, "Import Data - FAQ", 5 Nov 2026):
+  XML is Tally Prime's native import (Alt+O → Transactions, every
+  release); CSV does NOT import directly — it must first be saved as
+  .xlsx and imported with a mapping template (Release 4.0+). So the
+  pilot's main route is the new XML export (`site/tally-xml.js`:
+  masters + vouchers, every voucher balances), and the CSV stays as
+  the .xlsx route. The gap is written in the pilot doc, not hidden.
+- The Tally CSV stays BETA. Nothing is called "CA-ready" until a real
+  CA test passes. No CA yet — the real test waits until one is found
+  (a local Bhubaneswar CA, or a shopkeeper who already uses Tally).
+- Building the fixtures caught a real bug: the GSTR-1 JSON reported
+  every B2B item's tax as IGST (the summary dropped the intra-state
+  flag) and CDNR items were hardcoded to zero tax. Both are fixed in
+  `site/gst-reports.js` and covered by `site/ca-pilot.test.js`.
+- Reports screens (Site + app) carry a small CA pilot note linking to
+  the pilot doc.
+
 ## Phase 1.3 — CA pilot
 
 Nothing marked "DRAFT" or "BETA" becomes "ready" until a real CA
@@ -324,7 +388,9 @@ checks it:
 - Tally-compatible CSV: a CA imports it into Tally and the import has
   to pass. Only then is it called "CA-ready". Until then the CSV stays
   BETA.
-- The CA pilot result (pass/fail + what changed) goes in this spec.
+- Prep is done (`docs/CA-PILOT.md` + fixtures + XML export). The real
+  test is pending — no CA yet. The CA pilot result (pass/fail + what
+  changed) goes in this spec.
 
 ## Phase 2 — Android app + sync + the rest of the paid features
 

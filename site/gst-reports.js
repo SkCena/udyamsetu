@@ -95,6 +95,10 @@ function gstr1Summary(invoices, opts) {
         taxablePaise: inv.totals.taxablePaise || 0,
         taxPaise,
         roundedTotalPaise: inv.totals.roundedTotalPaise || 0,
+        // Kept so the portal JSON can split the note's tax per line
+        // (was hardcoded to zeros before — a CA-pilot fixture caught it).
+        intraState: !!inv.intraState,
+        lines: (inv.lines || []).map((l) => Object.assign({}, l)),
       });
       continue;
     }
@@ -104,6 +108,9 @@ function gstr1Summary(invoices, opts) {
       number: inv.number,
       date: inv.date,
       buyerState: inv.buyerState,
+      // Kept: portalItems splits each line's tax by it. Without this every
+      // B2B item was reported as IGST (a CA-pilot fixture caught it).
+      intraState: !!inv.intraState,
       taxablePaise: inv.totals.taxablePaise || 0,
       igstPaise: inv.totals.igstPaise || 0,
       cgstPaise: inv.totals.cgstPaise || 0,
@@ -273,7 +280,10 @@ function reconcile2A2B(ownInvoices, portal2B) {
 }
 
 /** Per-line portal items for one invoice (rupees, 2 decimals). */
-function portalItems(inv) {
+function portalItems(inv, sign) {
+  // sign -1 for credit notes (their totals are negated, so the items must
+  // be too — otherwise itm_det won't reconcile with the note's val).
+  const s = sign || 1;
   return (inv.lines || []).map((line, i) => {
     const calc = gstRep.calcLine({
       qty: line.qty,
@@ -285,11 +295,11 @@ function portalItems(inv) {
     return {
       num: i + 1,
       itm_det: {
-        txval: paiseToRupees(calc.taxablePaise),
+        txval: s * paiseToRupees(calc.taxablePaise),
         rt: line.taxRatePct,
-        iamt: paiseToRupees(calc.igstPaise),
-        camt: paiseToRupees(calc.cgstPaise),
-        samt: paiseToRupees(calc.sgstPaise),
+        iamt: s * paiseToRupees(calc.igstPaise),
+        camt: s * paiseToRupees(calc.cgstPaise),
+        samt: s * paiseToRupees(calc.sgstPaise),
       },
     };
   });
@@ -348,7 +358,7 @@ function gstr1Json(profile, summary, opts) {
       ntty: n.noteType,
       rsn: 'Others',
       val: paiseToRupees(n.roundedTotalPaise != null ? n.roundedTotalPaise : n.taxablePaise + n.taxPaise),
-      itms: [{ num: 1, itm_det: { txval: paiseToRupees(n.taxablePaise), rt: 0, iamt: 0, camt: 0, samt: 0 } }],
+      itms: portalItems(n, n.noteType === 'C' ? -1 : 1),
     });
   }
   return {

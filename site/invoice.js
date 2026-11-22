@@ -336,6 +336,127 @@ function invoiceToDocHtml(invoice, profile) {
     '</body></html>';
 }
 
+/** Invoice templates — look only. Every template prints the SAME numbers\n *  from invoice.totals (shared core); nothing is re-computed per template. */
+const INVOICE_TEMPLATES = ['classic', 'modern', 'minimal', 'thermal'];
+function isInvoiceTemplate(name) { return INVOICE_TEMPLATES.indexOf(name) !== -1; }
+
+/**
+ * Full invoice HTML for one template. labels carries the display strings
+ * ({kind, taxable, roundOff, grandTotal, draft, against}) so the Site can
+ * pass translated labels while node tests pass English ones. Pure.
+ */
+function invoiceTemplateHtml(invoice, profile, template, labels) {
+  const tpl = isInvoiceTemplate(template) ? template : 'classic';
+  const prof = profile || {};
+  const lb = labels || {};
+  const kind = lb.kind || docTypeLabel(invoice.type);
+  const rows = invoice.lines.map((l, i) => {
+    const calc = { qty: l.qty, unitPricePaise: l.unitPricePaise, discountPct: l.discountPct || 0, taxRatePct: l.taxRatePct, intraState: invoice.intraState };
+    let lineTotal;
+    try { lineTotal = gstCore.calcLine(calc); } catch (e) { lineTotal = null; }
+    return '<tr><td>' + (i + 1) + '</td><td>' + escDoc(l.name) + '</td><td>' + escDoc(l.hsn) + '</td>' +
+      '<td class="num">' + l.qty + '</td><td class="num">' + escDoc(gstCore.formatINR(l.unitPricePaise)) + '</td>' +
+      '<td class="num">' + (l.discountPct || 0) + '%</td><td class="num">' + l.taxRatePct + '%</td>' +
+      '<td class="num">' + (lineTotal ? escDoc(gstCore.formatINR(lineTotal.taxablePaise)) : '—') + '</td></tr>';
+  }).join('');
+  const tot = invoice.totals;
+  return '<div class="invoice-doc tpl-' + tpl + '"><div class="doc-head"><div><h3>' + escDoc(prof.name || 'UdyamSetu') + '</h3>' +
+    '<div class="doc-meta">' +
+    (prof.gstin ? 'GSTIN: ' + escDoc(prof.gstin) + '<br>' : '') +
+    (prof.address ? escDoc(prof.address) + '<br>' : '') +
+    (prof.phone ? 'Phone: ' + escDoc(prof.phone) + '<br>' : '') +
+    '</div></div>' +
+    (prof.logoDataUrl ? '<img src="' + escDoc(prof.logoDataUrl) + '" alt="logo">' : '') +
+    '</div>' +
+    '<h3>' + escDoc(kind) + (invoice.status === 'draft' ? ' (' + escDoc(lb.draft || 'DRAFT') + ')' : '') + '</h3>' +
+    '<div class="doc-meta">' +
+    (invoice.number ? 'No: <strong>' + escDoc(invoice.number) + '</strong><br>' : '') +
+    'Date: ' + escDoc(invoice.date) +
+    (invoice.fy ? ' · FY ' + escDoc(invoice.fy) : '') + '<br>' +
+    'Party: <strong>' + escDoc(invoice.partyName) + '</strong><br>' +
+    (invoice.partyGstin ? 'Party GSTIN: ' + escDoc(invoice.partyGstin) + '<br>' : '') +
+    'Buyer state: ' + escDoc(stateName(invoice.buyerState)) +
+    ' · ' + (invoice.intraState ? 'CGST + SGST' : 'IGST') + '<br>' +
+    (invoice.linkedInvoiceNumber ? escDoc(lb.against || 'Against: ') + escDoc(invoice.linkedInvoiceNumber) + '<br>' : '') +
+    '</div>' +
+    '<table class="doc-table"><thead><tr><th>#</th><th>Item</th><th>HSN</th><th class="num">Qty</th>' +
+    '<th class="num">Rate</th><th class="num">Disc</th><th class="num">GST</th><th class="num">Taxable</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>' +
+    '<div class="doc-totals">' +
+    '<div class="trow"><span>' + escDoc(lb.taxable || 'Taxable') + '</span><strong>' + escDoc(gstCore.formatINR(tot.taxablePaise)) + '</strong></div>' +
+    (invoice.intraState
+      ? '<div class="trow"><span>CGST</span><strong>' + escDoc(gstCore.formatINR(tot.cgstPaise)) + '</strong></div>' +
+        '<div class="trow"><span>SGST</span><strong>' + escDoc(gstCore.formatINR(tot.sgstPaise)) + '</strong></div>'
+      : '<div class="trow"><span>IGST</span><strong>' + escDoc(gstCore.formatINR(tot.igstPaise)) + '</strong></div>') +
+    '<div class="trow"><span>' + escDoc(lb.roundOff || 'Round off') + '</span><strong>' + escDoc(gstCore.formatINR(tot.roundOffPaise)) + '</strong></div>' +
+    '<div class="trow grand"><span>' + escDoc(lb.grandTotal || 'Grand Total') + '</span><strong>' + escDoc(gstCore.formatINR(tot.roundedTotalPaise)) + '</strong></div>' +
+    '</div>' +
+    (prof.upiId ? '<p class="doc-meta">Pay via UPI: ' + escDoc(prof.upiId) + '</p>' : '') +
+    '</div>';
+}
+
+/** Share links for one document — all from the same plain-text summary. */
+function invoiceShareUrls(invoice, profile) {
+  const text = whatsappText(invoice, profile);
+  const enc = encodeURIComponent(text);
+  const subject = encodeURIComponent(docTypeLabel(invoice.type) + ' ' + (invoice.number || '(draft)') + ' — ' + (profile.name || ''));
+  return {
+    whatsapp: 'https://wa.me/?text=' + enc,
+    sms: 'sms:?body=' + enc,
+    email: 'mailto:?subject=' + subject + '&body=' + enc,
+    telegram: 'https://t.me/share/url?url=' + encodeURIComponent('https://skcena.github.io/udyamsetu/') + '&text=' + enc,
+  };
+}
+
+/** Plain text lines for the PNG image export — same numbers, no HTML. Pure. */
+function invoiceImageLines(invoice, profile) {
+  const prof = profile || {};
+  const tot = invoice.totals;
+  const lines = [
+    { text: prof.name || 'UdyamSetu', bold: true },
+    { text: docTypeLabel(invoice.type) + (invoice.number ? ' ' + invoice.number : ''), bold: true },
+    { text: 'Date: ' + invoice.date },
+    { text: 'Party: ' + invoice.partyName },
+    { text: '----------------------------------------' },
+  ];
+  invoice.lines.forEach((l, i) => {
+    lines.push({ text: (i + 1) + '. ' + l.name + ' x' + l.qty + '  ' + gstCore.formatINR(l.unitPricePaise) });
+  });
+  lines.push({ text: '----------------------------------------' });
+  lines.push({ text: 'Taxable: ' + gstCore.formatINR(tot.taxablePaise) });
+  if (invoice.intraState) {
+    lines.push({ text: 'CGST: ' + gstCore.formatINR(tot.cgstPaise) });
+    lines.push({ text: 'SGST: ' + gstCore.formatINR(tot.sgstPaise) });
+  } else {
+    lines.push({ text: 'IGST: ' + gstCore.formatINR(tot.igstPaise) });
+  }
+  lines.push({ text: 'Round off: ' + gstCore.formatINR(tot.roundOffPaise) });
+  lines.push({ text: 'Total: ' + gstCore.formatINR(tot.roundedTotalPaise), bold: true });
+  if (prof.upiId) lines.push({ text: 'Pay via UPI: ' + prof.upiId });
+  return lines;
+}
+
+/**
+ * Draw the invoice onto a <canvas> (browser only) and return the canvas.
+ * The caller downloads it as PNG. Uses invoiceImageLines, so the image
+ * carries the same numbers as the screen bill.
+ */
+function drawInvoicePng(invoice, profile, canvas) {
+  const lines = invoiceImageLines(invoice, profile);
+  const ctx = canvas.getContext('2d');
+  const W = 760, rowH = 34, pad = 28;
+  canvas.width = W;
+  canvas.height = pad * 2 + lines.length * rowH + 12;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#16233d';
+  lines.forEach((ln, i) => {
+    ctx.font = (ln.bold ? 'bold ' : '') + (i === 0 ? '30px' : i === 1 ? '24px' : '20px') + ' sans-serif';
+    ctx.fillText(ln.text, pad, pad + (i + 1) * rowH);
+  });
+  return canvas;
+}
+
 /** JSON export of one document (bill + seller details). Pure. */
 function invoiceToExportJson(invoice, profile) {
   return JSON.stringify({
@@ -353,6 +474,8 @@ const invoiceApi = {
   makeNoteDraft, whatsappText, whatsappUrl, newId, todayISO,
   DOC_TYPES, DOC_TYPE_LABELS, DOC_TYPE_PREFIX, docTypeLabel, isDocType,
   isTaxableDocType, applyDocTypeToLines, docFileName, invoiceToDocHtml, invoiceToExportJson,
+  INVOICE_TEMPLATES, isInvoiceTemplate, invoiceTemplateHtml,
+  invoiceShareUrls, invoiceImageLines, drawInvoicePng,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

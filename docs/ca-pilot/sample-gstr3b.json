@@ -1,0 +1,76 @@
+{
+  "gstin": "22AAAAA0000A1ZC",
+  "fp": "112026",
+  "sup_details": {
+    "osup_det": {
+      "txval": 3101.5,
+      "iamt": 100,
+      "camt": 27.54,
+      "samt": 27.54,
+      "csamt": 0
+    },
+    "osup_zero": {
+      "txval": 0,
+      "iamt": 0,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    },
+    "osup_nil_exmp": {
+      "txval": 0,
+      "iamt": 0,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    },
+    "isup_rev": {
+      "txval": 0,
+      "iamt": 0,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    },
+    "osup_nongst": {
+      "txval": 0,
+      "iamt": 0,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    }
+  },
+  "itc_elg": {
+    "itc_avl": [
+      {
+        "ty": "OTH",
+        "iamt": 0,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0
+      }
+    ],
+    "itc_rev": [
+      {
+        "ty": "OTH",
+        "iamt": 0,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0
+      }
+    ],
+    "itc_net": {
+      "iamt": 0,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    },
+    "itc_inelg": [
+      {
+        "ty": "OTH",
+        "iamt": 0,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0
+      }
+    ]
+  }
+}

@@ -53,6 +53,7 @@ object Routes {
     const val MORE = "more"
     const val ABOUT = "about"
     const val CALCULATOR = "calculator"
+    const val BASIC_CALC = "basiccalc"
     const val GUIDE = "guide"
     const val BACKUP = "backup"
 }
@@ -97,14 +98,23 @@ class MainActivity : ComponentActivity() {
         val savedTheme = getSharedPreferences("udyamsetu_theme", Context.MODE_PRIVATE)
             .getString("theme_mode", "system") ?: "system"
         vm.applyThemeMode(savedTheme)
+        // Saved colour scheme, same synchronous pattern. Default: navy-gold.
+        val savedScheme = getSharedPreferences("udyamsetu_theme", Context.MODE_PRIVATE)
+            .getString("theme_scheme", "navy-gold") ?: "navy-gold"
+        vm.applyThemeScheme(savedScheme)
+        // Saved invoice template, same pattern. Default: classic.
+        val savedTemplate = getSharedPreferences("udyamsetu_theme", Context.MODE_PRIVATE)
+            .getString("invoice_template", "classic") ?: "classic"
+        vm.applyInvoiceTemplate(savedTemplate)
         setContent {
             val themeMode by vm.themeMode.collectAsState()
+            val themeScheme by vm.themeScheme.collectAsState()
             val darkTheme = when (themeMode) {
                 "dark" -> true
                 "light" -> false
                 else -> isSystemInDarkTheme()
             }
-            UdyamSetuTheme(darkTheme = darkTheme) {
+            UdyamSetuTheme(darkTheme = darkTheme, scheme = themeScheme) {
                 val langChosen by vm.langChosen.collectAsState()
                 val nav = rememberNavController()
                 navRef = nav
@@ -137,6 +147,7 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.MORE) { MoreScreen(vm, nav) }
                         composable(Routes.ABOUT) { AboutScreen(vm, nav) }
                         composable(Routes.CALCULATOR) { CalculatorScreen(vm, nav) }
+                        composable(Routes.BASIC_CALC) { BasicCalcScreen(vm, nav) }
                         composable(Routes.GUIDE) { GuideScreen(vm, nav) }
                         composable(Routes.BACKUP) { BackupScreen(vm, nav) }
                     }

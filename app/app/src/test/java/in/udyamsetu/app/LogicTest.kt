@@ -19,8 +19,14 @@ import `in`.udyamsetu.app.logic.encodeBackup
 import `in`.udyamsetu.app.logic.encodeLines
 import `in`.udyamsetu.app.logic.encryptBackup
 import `in`.udyamsetu.app.logic.BackupData
+import `in`.udyamsetu.app.logic.BasicCalcState
+import `in`.udyamsetu.app.logic.INVOICE_TEMPLATES
 import `in`.udyamsetu.app.logic.ProfileBackup
+import `in`.udyamsetu.app.logic.basicCalcFormat
+import `in`.udyamsetu.app.logic.basicCalcPress
+import `in`.udyamsetu.app.logic.isInvoiceTemplate
 import `in`.udyamsetu.app.logic.partyBalance
+import `in`.udyamsetu.app.logic.shareTextForDoc
 import `in`.udyamsetu.app.logic.stockQty
 import `in`.udyamsetu.app.logic.MovementRow
 import org.junit.Assert.assertEquals
@@ -123,5 +129,39 @@ class LogicTest {
             threw = true
         }
         assertTrue(threw)
+    }
+
+    @Test
+    fun basicCalcMirrorsSite() {
+        fun pressSeq(keys: List<String>): BasicCalcState {
+            var s = BasicCalcState()
+            for (k in keys) s = basicCalcPress(s, k)
+            return s
+        }
+        assertEquals("123", pressSeq(listOf("1", "2", "3")).entry)
+        assertEquals("15", pressSeq(listOf("1", "2", "+", "3", "=")).entry)
+        assertEquals("0.3", pressSeq(listOf("0", ".", "1", "+", "0", ".", "2", "=")).entry)
+        assertEquals("20", pressSeq(listOf("2", "+", "3", "×", "4", "=")).entry)
+        assertEquals("0.5", pressSeq(listOf("5", "0", "%")).entry)
+        assertEquals("Error", pressSeq(listOf("5", "÷", "0", "=")).entry)
+        assertEquals("7", pressSeq(listOf("5", "÷", "0", "=", "7")).entry)
+        assertEquals("12 + 3 =", pressSeq(listOf("1", "2", "+", "3", "=")).history)
+        assertEquals("0.6666666667", basicCalcFormat(2.0 / 3.0))
+    }
+
+    @Test
+    fun invoiceTemplatesAndShareText() {
+        assertEquals(listOf("classic", "modern", "minimal", "thermal"), INVOICE_TEMPLATES)
+        assertTrue(isInvoiceTemplate("classic"))
+        assertTrue(!isInvoiceTemplate("fancy"))
+        val share = shareTextForDoc(
+            typeLabel = "GST Bill", number = "INV/2026-27/0001",
+            shopName = "Sharma Kirana Store", partyName = "Ramesh Kumar",
+            totalPaise = 117800L, upiId = "sharma@upi",
+        )
+        assertTrue(share.contains("INV/2026-27/0001"))
+        assertTrue(share.contains("Ramesh Kumar"))
+        assertTrue(share.contains("₹1178.00"))
+        assertTrue(share.contains("Pay via UPI: sharma@upi"))
     }
 }

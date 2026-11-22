@@ -32,9 +32,18 @@ private val LANG_KEY = stringPreferencesKey("lang")
 private val LANG_CHOSEN_KEY = stringPreferencesKey("lang_chosen")
 private val FTU_KEY = stringPreferencesKey("ftu")
 private val THEME_KEY = stringPreferencesKey("theme")
+private val SCHEME_KEY = stringPreferencesKey("theme_scheme")
+private val STAR_DISMISSED_KEY = stringPreferencesKey("star_dismissed")
+private val TEMPLATE_KEY = stringPreferencesKey("invoice_template")
 
 /** Theme modes: "system" (device setting, default) | "light" | "dark". */
 val THEME_MODES = listOf("system", "light", "dark")
+
+/** Colour schemes (premium, no green): "navy-gold" default + 4 more. */
+val THEME_SCHEMES = listOf("navy-gold", "midnight", "indigo", "copper", "amber")
+
+/** Invoice templates: "classic" default + modern / minimal / thermal. */
+val INVOICE_TEMPLATE_NAMES = listOf("classic", "modern", "minimal", "thermal")
 
 data class FtuAnswers(
     val shopType: String = "",
@@ -89,6 +98,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _themeMode = MutableStateFlow("system")
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
+    // --- Colour scheme ("navy-gold" default; saved, survives restarts) ----
+    private val _themeScheme = MutableStateFlow("navy-gold")
+    val themeScheme: StateFlow<String> = _themeScheme.asStateFlow()
+
+    // --- Invoice template ("classic" default; saved, survives restarts) ---
+    private val _invoiceTemplate = MutableStateFlow("classic")
+    val invoiceTemplate: StateFlow<String> = _invoiceTemplate.asStateFlow()
+
+    // --- Star prompt dismissed (Home + More; once dismissed, stays hidden) -
+    private val _starDismissed = MutableStateFlow(false)
+    val starDismissed: StateFlow<Boolean> = _starDismissed.asStateFlow()
+
     // --- Draft bill (hoisted: survives tab switches) ----------------------
     private val _draft = MutableStateFlow(DraftBill())
     val draft: StateFlow<DraftBill> = _draft.asStateFlow()
@@ -110,6 +131,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
             val theme = prefs[THEME_KEY] ?: "system"
             if (theme in THEME_MODES) _themeMode.value = theme
+            val scheme = prefs[SCHEME_KEY] ?: "navy-gold"
+            if (scheme in THEME_SCHEMES) _themeScheme.value = scheme
+            val template = prefs[TEMPLATE_KEY] ?: "classic"
+            if (template in INVOICE_TEMPLATE_NAMES) _invoiceTemplate.value = template
+            _starDismissed.value = prefs[STAR_DISMISSED_KEY] == "1"
         }
     }
 
@@ -131,6 +157,51 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Sync seed from the SharedPreferences mirror, read in onCreate. */
     fun applyThemeMode(mode: String) {
         if (mode in THEME_MODES) _themeMode.value = mode
+    }
+
+    /** Colour scheme choice: saves to DataStore and applies at once. */
+    fun setThemeScheme(scheme: String) {
+        val safe = if (scheme in THEME_SCHEMES) scheme else "navy-gold"
+        _themeScheme.value = safe
+        // Plain SharedPreferences copy: MainActivity reads it
+        // synchronously at launch so the first frame already uses the
+        // saved scheme (DataStore is async). Same pattern as theme mode.
+        getApplication<Application>()
+            .getSharedPreferences("udyamsetu_theme", android.content.Context.MODE_PRIVATE)
+            .edit().putString("theme_scheme", safe).apply()
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[SCHEME_KEY] = safe }
+        }
+    }
+
+    /** Sync seed from the SharedPreferences mirror, read in onCreate. */
+    fun applyThemeScheme(scheme: String) {
+        if (scheme in THEME_SCHEMES) _themeScheme.value = scheme
+    }
+
+    /** Invoice template choice: saves to DataStore and applies at once. */
+    fun setInvoiceTemplate(template: String) {
+        val safe = if (template in INVOICE_TEMPLATE_NAMES) template else "classic"
+        _invoiceTemplate.value = safe
+        getApplication<Application>()
+            .getSharedPreferences("udyamsetu_theme", android.content.Context.MODE_PRIVATE)
+            .edit().putString("invoice_template", safe).apply()
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[TEMPLATE_KEY] = safe }
+        }
+    }
+
+    /** Sync seed from the SharedPreferences mirror, read in onCreate. */
+    fun applyInvoiceTemplate(template: String) {
+        if (template in INVOICE_TEMPLATE_NAMES) _invoiceTemplate.value = template
+    }
+
+    /** Star prompt dismissed — hides the card on Home + More for good. */
+    fun dismissStar() {
+        _starDismissed.value = true
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[STAR_DISMISSED_KEY] = "1" }
+        }
     }
 
     fun setLanguage(code: String) {

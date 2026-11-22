@@ -11,12 +11,18 @@
 <link rel="stylesheet" href="styles.css">
 <script>
 // Theme before first paint: saved choice wins, else the phone's setting.
+// Colour scheme (navy-gold default) is restored the same way, so the
+// first paint already uses the saved look — no flash of the wrong theme.
 try {
   var _t = localStorage.getItem('udyamsetu.theme');
   if (_t !== 'light' && _t !== 'dark') {
     _t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   }
   document.documentElement.setAttribute('data-theme', _t);
+  var _s = localStorage.getItem('udyamsetu.scheme');
+  if (['navy-gold', 'midnight', 'indigo', 'copper', 'amber'].indexOf(_s) >= 0) {
+    document.documentElement.setAttribute('data-scheme', _s);
+  }
 } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
 </script>
 <script src="gst-core.js" defer></script>
@@ -31,6 +37,7 @@ try {
 <script src="i18n.js" defer></script>
 <script src="drive-config.js" defer></script>
 <script src="calculator.js" defer></script>
+<script src="basiccalc.js" defer></script>
 <script src="guide.js" defer></script>
 <script src="drive.js" defer></script>
 <script src="app.js" defer></script>
@@ -68,6 +75,7 @@ try {
   <button class="tab" data-tab="payroll" type="button" data-i18n="tabPayroll">Salary</button>
   <button class="tab" data-tab="reports" type="button" data-i18n="tabReports">Reports</button>
   <button class="tab" data-tab="calculator" type="button" data-i18n="tabCalculator">Calculator</button>
+  <button class="tab" data-tab="basiccalc" type="button" data-i18n="tabBasicCalc">Basic Calc</button>
   <button class="tab" data-tab="guide" type="button" data-i18n="tabGuide">GST Guide</button>
   <button class="tab" data-tab="about" type="button" data-i18n="tabAbout">About</button>
 </nav>
@@ -125,6 +133,14 @@ try {
       <div class="btn-row wrap">
         <a class="btn btn-primary" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
         <a class="btn" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
+      </div>
+    </div>
+    <div id="starCard" class="star-card">
+      <h3 data-i18n="starTitle">Support UdyamSetu — free for every shop</h3>
+      <p data-i18n="starText">UdyamSetu is free — no paywall, no ads. If it helps your shop, please star the GitHub repo. It takes a few seconds and helps more shops find it.</p>
+      <div class="btn-row wrap">
+        <a class="btn btn-primary" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="starBtn">Star on GitHub</a>
+        <button id="starDismiss" class="btn" type="button" data-i18n="starDismiss">Not now</button>
       </div>
     </div>
   </section>
@@ -247,13 +263,30 @@ try {
   <!-- ============ DETAIL ============ -->
   <section id="tab-detail" class="view" hidden>
     <button id="backToList" class="btn btn-ghost btn-small" type="button" data-i18n="backToList">← Bill List</button>
-    <div id="detailBody" class="invoice-doc"></div>
+    <label class="field tpl-picker"><span data-i18n="tplTitle">Bill template</span>
+      <select id="tplSelect">
+        <option value="classic" data-i18n="tplClassic">Classic</option>
+        <option value="modern" data-i18n="tplModern">Modern</option>
+        <option value="minimal" data-i18n="tplMinimal">Minimal</option>
+        <option value="thermal" data-i18n="tplThermal">Thermal 80mm</option>
+      </select></label>
+    <div id="detailBody"></div>
+    <h3 class="share-head" data-i18n="shareTitle">Share this bill</h3>
+    <div class="btn-row wrap">
+      <a id="waShareBtn" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" data-i18n="whatsapp">WhatsApp par bhejein</a>
+      <a id="smsShareBtn" class="btn" href="#" data-i18n="shareSms">SMS</a>
+      <a id="emailShareBtn" class="btn" href="#" data-i18n="shareEmail">Email</a>
+      <a id="tgShareBtn" class="btn" href="#" target="_blank" rel="noopener" data-i18n="shareTelegram">Telegram</a>
+    </div>
+    <div class="btn-row wrap">
+      <button id="copyShareBtn" class="btn" type="button" data-i18n="shareCopy">Copy text</button>
+      <button id="pdfShareBtn" class="btn" type="button" data-i18n="sharePdf">Download PDF</button>
+      <button id="pngShareBtn" class="btn" type="button" data-i18n="shareImage">Download image (PNG)</button>
+      <button id="sheetShareBtn" class="btn" type="button"><span data-i18n="shareSheet">Share sheet</span><span id="sheetApkBadge" class="apk-badge" data-i18n="apkBadge">APK chahiye</span></button>
+    </div>
     <div class="btn-row wrap">
       <button id="printA4Btn" class="btn btn-primary" type="button" data-i18n="printA4">Print — A4</button>
       <button id="printThermalBtn" class="btn" type="button" data-i18n="printThermal">Print — 80mm</button>
-      <a id="waShareBtn" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" data-i18n="whatsapp">WhatsApp par bhejein</a>
-    </div>
-    <div class="btn-row wrap">
       <button id="exportDocBtn" class="btn" type="button" data-i18n="exportDoc">Download DOC</button>
       <button id="exportJsonBtn" class="btn" type="button" data-i18n="exportJson">Download JSON</button>
     </div>
@@ -458,6 +491,11 @@ try {
   <section id="tab-reports" class="view" hidden>
     <h2 data-i18n="reportsTitle">Reports — Hisab + Export</h2>
     <p class="hint" data-i18n="hintReports">Tally CSV is BETA — CA pilot pending, not "CA-ready". Confirm with your CA before using it.</p>
+    <div class="card">
+      <strong data-i18n="caPilotTitle">CA pilot — Tally import test (BETA)</strong>
+      <p class="hint" data-i18n="caPilotNote">We are checking the Tally export with a CA before calling it CA-ready. See the pilot plan and sample files.</p>
+      <a class="btn" href="https://github.com/SkCena/udyamsetu/blob/main/docs/CA-PILOT.md" target="_blank" rel="noopener">CA-PILOT.md</a>
+    </div>
     <div class="field-row">
       <label class="field"><span>Se / From</span><input id="rFrom" type="date"></label>
       <label class="field"><span>Tak / To</span><input id="rTo" type="date"></label>
@@ -534,6 +572,36 @@ try {
     <p id="calcMsg" class="msg" role="status"></p>
   </section>
 
+  <!-- ============ BASIC CALCULATOR ============ -->
+  <section id="tab-basiccalc" class="view" hidden>
+    <h2 data-i18n="basicCalcTitle">Basic Calculator</h2>
+    <p class="hint" data-i18n="basicCalcHint">Simple calculator — add, subtract, multiply, divide, percent. Nothing is saved.</p>
+    <div id="basicCalcHistory" class="calc-history" aria-live="polite"></div>
+    <div id="basicCalcDisplay" class="calc-display" aria-live="polite">0</div>
+    <div class="calc-keys" role="group" aria-label="Calculator keys">
+      <button class="calc-key" type="button" data-key="C">C</button>
+      <button class="calc-key" type="button" data-key="back">⌫</button>
+      <button class="calc-key" type="button" data-key="%">%</button>
+      <button class="calc-key op" type="button" data-key="÷">÷</button>
+      <button class="calc-key" type="button" data-key="7">7</button>
+      <button class="calc-key" type="button" data-key="8">8</button>
+      <button class="calc-key" type="button" data-key="9">9</button>
+      <button class="calc-key op" type="button" data-key="×">×</button>
+      <button class="calc-key" type="button" data-key="4">4</button>
+      <button class="calc-key" type="button" data-key="5">5</button>
+      <button class="calc-key" type="button" data-key="6">6</button>
+      <button class="calc-key op" type="button" data-key="-">−</button>
+      <button class="calc-key" type="button" data-key="1">1</button>
+      <button class="calc-key" type="button" data-key="2">2</button>
+      <button class="calc-key" type="button" data-key="3">3</button>
+      <button class="calc-key op" type="button" data-key="+">+</button>
+      <button class="calc-key" type="button" data-key="0">0</button>
+      <button class="calc-key" type="button" data-key="00">00</button>
+      <button class="calc-key" type="button" data-key=".">.</button>
+      <button class="calc-key eq" type="button" data-key="=">=</button>
+    </div>
+  </section>
+
   <!-- ============ GST GUIDE ============ -->
   <section id="tab-guide" class="view" hidden>
     <h2 data-i18n="guideTitle">GST Guide — Simple Knowledge</h2>
@@ -546,9 +614,28 @@ try {
     <h2 data-i18n="aboutTitle">About — UdyamSetu</h2>
     <p data-i18n="aboutText">UdyamSetu is free GST billing for small shops — no paywall, no ads, your data stays on your phone.</p>
     <p><strong data-i18n="credit">Made by Sk Akram</strong></p>
+    <h3 data-i18n="starTitle">Support UdyamSetu — free for every shop</h3>
+    <p class="hint" data-i18n="starText">UdyamSetu is free — no paywall, no ads. If it helps your shop, please star the GitHub repo. It takes a few seconds and helps more shops find it.</p>
+    <div class="btn-row wrap">
+      <a class="btn btn-primary" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="starBtn">Star on GitHub</a>
+      <a class="btn" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
+    </div>
+    <h3 data-i18n="themeModeTitle">Light or dark</h3>
+    <div class="mode-row" role="group" aria-label="Light or dark">
+      <button class="mode-btn" type="button" data-mode="system" data-i18n="themeSystem">System</button>
+      <button class="mode-btn" type="button" data-mode="light" data-i18n="themeLight">Light</button>
+      <button class="mode-btn" type="button" data-mode="dark" data-i18n="themeDark">Dark</button>
+    </div>
+    <h3 data-i18n="themeScheme">Colour theme</h3>
+    <div class="scheme-row" role="group" aria-label="Colour theme">
+      <button class="scheme-btn" type="button" data-scheme="navy-gold"><span class="dot" style="--dot:#C9A227"></span><span data-i18n="schemeNavyGold">Navy Gold</span></button>
+      <button class="scheme-btn" type="button" data-scheme="midnight"><span class="dot" style="--dot:#8FA3C7"></span><span data-i18n="schemeMidnight">Midnight</span></button>
+      <button class="scheme-btn" type="button" data-scheme="indigo"><span class="dot" style="--dot:#5B54D6"></span><span data-i18n="schemeIndigo">Royal Indigo</span></button>
+      <button class="scheme-btn" type="button" data-scheme="copper"><span class="dot" style="--dot:#B4653A"></span><span data-i18n="schemeCopper">Copper Rose</span></button>
+      <button class="scheme-btn" type="button" data-scheme="amber"><span class="dot" style="--dot:#D97706"></span><span data-i18n="schemeAmber">Charcoal Amber</span></button>
+    </div>
     <div class="btn-row wrap">
       <a class="btn" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
-      <a class="btn" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
     </div>
   </section>
 </main>

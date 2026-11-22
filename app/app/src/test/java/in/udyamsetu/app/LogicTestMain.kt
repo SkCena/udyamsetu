@@ -42,7 +42,12 @@ import `in`.udyamsetu.app.logic.lowStock
 import `in`.udyamsetu.app.logic.negateTotals
 import `in`.udyamsetu.app.logic.partyBalance
 import `in`.udyamsetu.app.logic.calcPayslip
+import `in`.udyamsetu.app.logic.BasicCalcState
 import `in`.udyamsetu.app.logic.EmployeeRow
+import `in`.udyamsetu.app.logic.INVOICE_TEMPLATES
+import `in`.udyamsetu.app.logic.basicCalcFormat
+import `in`.udyamsetu.app.logic.basicCalcPress
+import `in`.udyamsetu.app.logic.isInvoiceTemplate
 import `in`.udyamsetu.app.logic.profitLoss
 import `in`.udyamsetu.app.logic.purchaseSummary
 import `in`.udyamsetu.app.logic.reconcile2A2B
@@ -244,6 +249,50 @@ fun main() {
     var threwVersion = false
     try { decodeBackup("UDYAMSETU-BACKUP|99\n") } catch (_: IllegalArgumentException) { threwVersion = true }
     eq("backup.bad-version", threwVersion, true)
+
+    // Basic calculator (standalone, not GST) — mirrors site/basiccalc.js.
+    fun pressSeq(keys: List<String>): BasicCalcState {
+        var s = BasicCalcState()
+        for (k in keys) s = basicCalcPress(s, k)
+        return s
+    }
+    eq("basiccalc.starts-at-0", BasicCalcState().entry, "0")
+    eq("basiccalc.type-digits", pressSeq(listOf("1", "2", "3")).entry, "123")
+    eq("basiccalc.leading-zero", pressSeq(listOf("0", "5")).entry, "5")
+    eq("basiccalc.decimal", pressSeq(listOf("1", ".", "5")).entry, "1.5")
+    eq("basiccalc.one-dot-only", pressSeq(listOf("1", ".", ".", "5")).entry, "1.5")
+    eq("basiccalc.add", pressSeq(listOf("1", "2", "+", "3", "=")).entry, "15")
+    eq("basiccalc.subtract", pressSeq(listOf("9", "-", "4", "=")).entry, "5")
+    eq("basiccalc.multiply", pressSeq(listOf("6", "×", "7", "=")).entry, "42")
+    eq("basiccalc.divide", pressSeq(listOf("8", "÷", "2", "=")).entry, "4")
+    eq("basiccalc.no-0.1-0.2-artefact", pressSeq(listOf("0", ".", "1", "+", "0", ".", "2", "=")).entry, "0.3")
+    eq("basiccalc.chained-ops", pressSeq(listOf("2", "+", "3", "×", "4", "=")).entry, "20")
+    eq("basiccalc.percent", pressSeq(listOf("5", "0", "%")).entry, "0.5")
+    eq("basiccalc.percent-after-op", pressSeq(listOf("2", "0", "0", "+", "1", "0", "%", "=")).entry, "200.1")
+    eq("basiccalc.backspace", pressSeq(listOf("1", "2", "3", "back")).entry, "12")
+    eq("basiccalc.backspace-to-zero", pressSeq(listOf("5", "back")).entry, "0")
+    eq("basiccalc.clear", pressSeq(listOf("9", "+", "1", "C")).entry, "0")
+    eq("basiccalc.divide-by-zero", pressSeq(listOf("5", "÷", "0", "=")).entry, "Error")
+    eq("basiccalc.digit-after-error", pressSeq(listOf("5", "÷", "0", "=", "7")).entry, "7")
+    eq("basiccalc.equals-without-op", pressSeq(listOf("4", "2", "=")).entry, "42")
+    eq("basiccalc.history-sum", pressSeq(listOf("1", "2", "+", "3", "=")).history, "12 + 3 =")
+    eq("basiccalc.history-pending", pressSeq(listOf("1", "2", "+")).history, "12 +")
+    eq("basiccalc.double-zero", pressSeq(listOf("1", "00")).entry, "100")
+    eq("basiccalc.format-trims-tail", basicCalcFormat(2.0 / 3.0), "0.6666666667")
+
+    // Invoice templates (look only) + share text — mirrors site/invoice.js.
+    eq("templates.list", INVOICE_TEMPLATES, listOf("classic", "modern", "minimal", "thermal"))
+    eq("templates.classic-valid", isInvoiceTemplate("classic"), true)
+    eq("templates.bogus-invalid", isInvoiceTemplate("fancy"), false)
+    val shareTpl = shareTextForDoc(
+        typeLabel = "GST Bill", number = "INV/2026-27/0001",
+        shopName = "Sharma Kirana Store", partyName = "Ramesh Kumar",
+        totalPaise = 117800L, upiId = "sharma@upi",
+    )
+    eq("share.has-number", shareTpl.contains("INV/2026-27/0001"), true)
+    eq("share.has-party", shareTpl.contains("Ramesh Kumar"), true)
+    eq("share.has-total", shareTpl.contains("₹1178.00"), true)
+    eq("share.has-upi", shareTpl.contains("Pay via UPI: sharma@upi"), true)
 
     println("Logic tests: $pass passed, $fail failed")
     if (failures.isNotEmpty()) {

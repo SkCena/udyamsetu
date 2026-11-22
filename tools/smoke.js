@@ -46,7 +46,7 @@ const files = [
   'site/gst-core.js', 'site/store.js', 'site/invoice.js', 'site/party.js',
   'site/inventory.js', 'site/gst-reports.js', 'site/einvoice.js',
   'site/payroll.js', 'site/reports.js', 'site/i18n.js', 'site/drive-config.js',
-  'site/calculator.js', 'site/guide.js', 'site/drive.js', 'site/app.js', 'site/app12.js',
+  'site/calculator.js', 'site/basiccalc.js', 'site/guide.js', 'site/drive.js', 'site/app.js', 'site/app12.js',
 ];
 for (const f of files) {
   const code = fs.readFileSync(path.join(base, f), 'utf8');

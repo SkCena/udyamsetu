@@ -10,7 +10,6 @@
 // negates, a debit note stays positive.
 package `in`.udyamsetu.app.ui
 
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,10 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import `in`.udyamsetu.app.R
 import `in`.udyamsetu.app.logic.DOC_TYPES
@@ -43,7 +42,6 @@ import `in`.udyamsetu.app.logic.validateBillLine
 
 @Composable
 fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
-    val context = LocalContext.current
     val draft by vm.draft.collectAsState()
     val profile by vm.profile.collectAsState(initial = null)
     val message by vm.billMessage.collectAsState()
@@ -156,15 +154,7 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
             // Preview BEFORE save — the mistake-catching step.
             BigButton(stringResource(R.string.preview_before_save)) { showPreview = true }
             if (showPreview && totals != null) {
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(profile?.name ?: "", fontWeight = FontWeight.Bold)
-                        Text("Party: ${draft.partyName} (${stateName(draft.buyerState)})")
-                        Text("Lines: ${lines.size} — ${stringResource(R.string.taxable)} ${formatRupees(totals.taxablePaise)}")
-                        Text("${stringResource(R.string.grand_total)}: ${formatRupees(totals.roundedTotalPaise)}", fontWeight = FontWeight.Bold)
-                        Text("Type: $typeLabel")
-                    }
-                }
+                InvoicePreview(vm, profile?.name ?: "", draft.partyName, draft.buyerState, lines.size, totals, typeLabel)
             }
             Row(modifier = Modifier.fillMaxWidth()) {
                 OutlinedButton(onClick = { vm.clearDraft() }, modifier = Modifier.weight(1f).padding(end = 4.dp)) {
@@ -192,8 +182,11 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
             }
             if (savedNumber.isNotEmpty()) {
                 Text(stringResource(R.string.invoice_saved))
-                OutlinedButton(onClick = {
-                    val shareText = shareTextForDoc(
+                // Was a single button labelled "WhatsApp" that opened the
+                // generic chooser — now the full share row (sheet, WhatsApp,
+                // SMS, Email, Telegram, Copy), same channels as the Site.
+                ShareButtons(
+                    shareText = shareTextForDoc(
                         typeLabel = savedTypeLabel,
                         number = savedNumber,
                         shopName = profile?.name ?: "",
@@ -201,13 +194,9 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
                         totalPaise = savedTotalPaise ?: 0L,
                         upiId = profile?.upiId ?: "",
                         note = if (savedType == "estimate") estimateNote else "",
-                    )
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, shareText)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share bill"))
-                }) { Text(stringResource(R.string.whatsapp)) }
+                    ),
+                    subject = "$savedTypeLabel $savedNumber",
+                )
             }
             if (message == "setup-first") Text(stringResource(R.string.setup_warn))
         }
@@ -218,4 +207,64 @@ private fun updateLine(vm: AppViewModel, draft: DraftBill, index: Int, line: Dra
     val lines = draft.lines.toMutableList()
     lines[index] = line
     vm.updateDraft(draft.copy(lines = lines))
+}
+
+/**
+ * Bill preview in the chosen template — look only. Every template shows
+ * the same totals from the shared core; the template only changes how the
+ * preview is drawn (same rule as the Site's invoiceTemplateHtml).
+ */
+@Composable
+private fun InvoicePreview(
+    vm: AppViewModel,
+    shopName: String,
+    partyName: String,
+    buyerState: String,
+    lineCount: Int,
+    totals: `in`.udyamsetu.app.core.InvoiceCalc,
+    typeLabel: String,
+) {
+    val template by vm.invoiceTemplate.collectAsState()
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(stringResource(R.string.tpl_title), fontWeight = FontWeight.Bold)
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            for (name in INVOICE_TEMPLATE_NAMES) {
+                OutlinedButton(
+                    onClick = { vm.setInvoiceTemplate(name) },
+                    modifier = Modifier.weight(1f).padding(end = 4.dp),
+                ) { Text(stringResource(invoiceTemplateLabelRes(name))) }
+            }
+        }
+        val body: @Composable () -> Unit = {
+            Text(shopName, fontWeight = FontWeight.Bold)
+            Text("Party: $partyName (${stateName(buyerState)})")
+            Text("Lines: $lineCount — ${stringResource(R.string.taxable)} ${formatRupees(totals.taxablePaise)}")
+            Text(
+                "${stringResource(R.string.grand_total)}: ${formatRupees(totals.roundedTotalPaise)}",
+                fontWeight = FontWeight.Bold,
+                fontSize = if (template == "modern") 20.sp else 16.sp,
+            )
+            Text("Type: $typeLabel")
+        }
+        when (template) {
+            "modern" -> Card(
+                modifier = Modifier.fillMaxWidth(),
+                border = androidx.compose.foundation.BorderStroke(2.dp, GOLD),
+            ) { Column(modifier = Modifier.padding(12.dp)) { body() } }
+            "minimal" -> Column(modifier = Modifier.padding(4.dp)) { body() }
+            "thermal" -> Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        androidx.compose.material3.LocalTextStyle provides androidx.compose.ui.text.TextStyle(
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            fontSize = 13.sp,
+                        ),
+                    ) { body() }
+                }
+            }
+            else -> Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) { body() }
+            }
+        }
+    }
 }

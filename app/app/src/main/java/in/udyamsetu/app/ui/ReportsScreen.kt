@@ -4,6 +4,7 @@
 package `in`.udyamsetu.app.ui
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +90,16 @@ fun ReportsScreen(vm: AppViewModel, nav: NavHostController) {
                 }
                 context.startActivity(Intent.createChooser(intent, "Share"))
             }) { Text("Share summary") }
+            // CA pilot note: the Tally export is BETA until a real CA test passes.
+            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(stringResource(R.string.ca_pilot_title), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ca_pilot_note))
+                    TextButton(onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SkCena/udyamsetu/blob/main/docs/CA-PILOT.md")))
+                    }) { Text("CA-PILOT.md") }
+                }
+            }
         }
     }
 }

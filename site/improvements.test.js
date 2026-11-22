@@ -204,13 +204,42 @@ async function main() {
   // --- 7. New tabs + new i18n keys in all 10 languages ---
   ok('calculator + guide tabs in HTML', /data-tab="calculator"/.test(html) && /data-tab="guide"/.test(html));
   ok('GIS script + drive-config script in HTML', /gsi\/client/.test(html) && /drive-config\.js/.test(html));
+  // --- Star prompt + themes + basic calc (round 2026-11-22) ---
+  ok('star card on Home, dismissible', /id="starCard"/.test(html) && /id="starDismiss"/.test(html)
+    && /udyamsetu\.starDismissed/.test(fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8')));
+  ok('star button in About links the repo', /tab-about[\s\S]*?starBtn/.test(html)
+    && (html.match(/href="https:\/\/github\.com\/SkCena\/udyamsetu"/g) || []).length >= 4);
+  ok('no fake star count anywhere', !/stars?[: ]?\s*\d/i.test(html)
+    && !Object.values(i18n.STRINGS).some((d) => Object.values(d).some((v) => typeof v === 'string' && /\d[\d,]*\s*stars/i.test(v))));
+  ok('basic calc tab + keypad in HTML', /data-tab="basiccalc"/.test(html)
+    && /<section id="tab-basiccalc"/.test(html) && /basiccalc\.js/.test(html));
+  ok('theme mode buttons (system/light/dark) in About', /data-mode="system"/.test(html)
+    && /data-mode="light"/.test(html) && /data-mode="dark"/.test(html));
+  for (const s of ['navy-gold', 'midnight', 'indigo', 'copper', 'amber']) {
+    ok('scheme button ' + s, new RegExp('data-scheme="' + s + '"').test(html)
+      && new RegExp('html\\[data-scheme="' + s + '"\\]').test(css));
+  }
+  ok('dark overrides exist for every scheme', ['midnight', 'indigo', 'copper', 'amber'].every((s) =>
+    new RegExp('html\\[data-theme="dark"\\]\\[data-scheme="' + s + '"\\]').test(css)));
+  ok('scheme CSS has no green', !/green|teal|#008000|#00ff00|#2ecc71|#27ae60|#10b981|#059669|#14b8a6|#0d9488|#2dd4bf/i.test(
+    (css.match(/data-scheme[\s\S]*?(?=\n\* \{)/) || [''])[0]));
+  ok('view fade is light (<=200ms) + reduced-motion respected', /animation: viewIn 160ms/.test(css)
+    && /prefers-reduced-motion/.test(css));
+  const starKeys = ['starTitle', 'starText', 'starBtn', 'starDismiss',
+    'themeSystem', 'themeLight', 'themeDark', 'themeModeTitle', 'themeScheme',
+    'schemeNavyGold', 'schemeMidnight', 'schemeIndigo', 'schemeCopper', 'schemeAmber',
+    'tabBasicCalc', 'basicCalcTitle', 'basicCalcHint', 'moreTools', 'moreBusiness', 'moreApp',
+    'tplTitle', 'tplClassic', 'tplModern', 'tplMinimal', 'tplThermal',
+    'shareTitle', 'shareSms', 'shareEmail', 'shareTelegram', 'shareCopy', 'shareCopied',
+    'sharePdf', 'shareImage', 'shareSheet', 'shareNoApp',
+    'caPilotTitle', 'caPilotNote'];
   const newKeys = ['tabCalculator', 'tabGuide', 'docTypeLabel', 'docInvoice', 'docNonGst', 'docEstimate',
     'docReceipt', 'calcTitle', 'calcHint', 'calcAmount', 'calcRate', 'calcMode', 'calcExclusive',
     'calcInclusive', 'calcTaxable', 'calcGst', 'calcTotal', 'guideTitle', 'guideHint',
     'guideS1Title', 'guideS2Title', 'guideS3Title', 'guideS4Title', 'guideS5Title', 'guideS6Title',
     'driveTitle', 'driveHint', 'driveSetupPending', 'driveSignIn', 'driveSignOut', 'driveBackupNow',
     'driveRestore', 'drivePassphrase', 'drivePassphraseHint', 'driveNoBackups', 'driveOffline',
-    'exportDoc', 'exportJson', 'credit'];
+    'exportDoc', 'exportJson', 'credit'].concat(starKeys);
   for (const lang of i18n.SUPPORTED_LANGS) {
     const missing = newKeys.filter((k) => i18n.STRINGS[lang.code][k] === undefined);
     eq('new keys complete in ' + lang.code, missing, []);

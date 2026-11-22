@@ -31,20 +31,52 @@
     updateTaxKind();
   }
 
-  // ---------------- theme: Light / Dark (header toggle, saved) ----------------
-  // The <head> inline script already sets data-theme before first paint;
-  // this only wires the toggle button and keeps the saved choice + the
-  // browser chrome colour in sync.
+  // ---------------- theme: Light / Dark / System + colour schemes ------
+  // The <head> inline script already sets data-theme + data-scheme before
+  // first paint; this only wires the controls and keeps the saved choice
+  // + the browser chrome colour in sync.
   const THEME_KEY = 'udyamsetu.theme';
+  const THEME_MODES = ['system', 'light', 'dark'];
   function currentTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
   }
-  function setTheme(mode) {
-    const next = mode === 'dark' ? 'dark' : 'light';
+  function syncModeButtons(mode) {
+    document.querySelectorAll('.mode-btn[data-mode]').forEach((b) =>
+      b.classList.toggle('selected', b.getAttribute('data-mode') === mode));
+  }
+  function applyThemeMode(mode) {
+    const saved = THEME_MODES.indexOf(mode) >= 0 ? mode : 'system';
+    const next = saved === 'dark' ? 'dark'
+      : saved === 'light' ? 'light'
+      : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode — theme still applies this session */ }
+    try { localStorage.setItem(THEME_KEY, saved); } catch (e) { /* private mode — theme still applies this session */ }
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', next === 'dark' ? '#0F1B2E' : '#16233D');
+    syncModeButtons(saved);
+  }
+  // Header toggle: flips explicit Light <-> Dark (System stays in About).
+  function setTheme(mode) {
+    applyThemeMode(mode === 'dark' ? 'dark' : 'light');
+  }
+
+  // Colour scheme: navy-gold (default) + midnight / indigo / copper /
+  // amber — premium, no green. Saved, survives reload.
+  const SCHEME_KEY = 'udyamsetu.scheme';
+  const SCHEMES = ['navy-gold', 'midnight', 'indigo', 'copper', 'amber'];
+  function currentScheme() {
+    const s = document.documentElement.getAttribute('data-scheme');
+    return SCHEMES.indexOf(s) >= 0 ? s : 'navy-gold';
+  }
+  function syncSchemeButtons(scheme) {
+    document.querySelectorAll('.scheme-btn[data-scheme]').forEach((b) =>
+      b.classList.toggle('selected', b.getAttribute('data-scheme') === scheme));
+  }
+  function setScheme(name) {
+    const next = SCHEMES.indexOf(name) >= 0 ? name : 'navy-gold';
+    document.documentElement.setAttribute('data-scheme', next);
+    try { localStorage.setItem(SCHEME_KEY, next); } catch (e) { /* private mode */ }
+    syncSchemeButtons(next);
   }
 
   // ---------------- helpers ----------------
@@ -61,7 +93,7 @@
   }
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === name));
-    ['home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'guide', 'about'].forEach((n) => {
+    ['home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'basiccalc', 'guide', 'about'].forEach((n) => {
       $('tab-' + n).hidden = (n !== name);
     });
     if (name === 'home') renderHome();
@@ -327,54 +359,39 @@
     });
   }
 
+  // Bill template: look only — totals always come from the shared core.
+  const TEMPLATE_KEY = 'udyamsetu.template';
+  function currentTemplate() {
+    try {
+      const saved = localStorage.getItem(TEMPLATE_KEY);
+      if (saved && invApi.isInvoiceTemplate(saved)) return saved;
+    } catch (e) { /* storage unavailable — fall back to Classic */ }
+    return 'classic';
+  }
+  function setTemplate(name) {
+    if (!invApi.isInvoiceTemplate(name)) return;
+    try { localStorage.setItem(TEMPLATE_KEY, name); } catch (e) { /* ignore */ }
+    syncTemplatePicker();
+    if (currentInvoice) {
+      $('detailBody').innerHTML = invoiceHtml(currentInvoice, profile);
+      $('print-area').innerHTML = invoiceHtml(currentInvoice, profile);
+    }
+  }
+  function syncTemplatePicker() {
+    const sel = $('tplSelect');
+    if (sel) sel.value = currentTemplate();
+  }
+
   function invoiceHtml(inv, prof) {
     const kind = inv.type === 'credit-note' ? t('noteCredit')
       : inv.type === 'debit-note' ? t('noteDebit')
       : inv.type === 'estimate' ? t('docEstimate')
       : inv.type === 'receipt' ? t('docReceipt')
       : inv.type === 'non-gst' ? t('docNonGst') : t('noteInvoice');
-    const rows = inv.lines.map((l, i) => {
-      const calc = { qty: l.qty, unitPricePaise: l.unitPricePaise, discountPct: l.discountPct || 0, taxRatePct: l.taxRatePct, intraState: inv.intraState };
-      let lineTotal;
-      try { lineTotal = calcLine(calc); } catch (e) { lineTotal = null; }
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(l.name) + '</td><td>' + esc(l.hsn) + '</td>' +
-        '<td class="num">' + l.qty + '</td><td class="num">' + esc(formatINR(l.unitPricePaise)) + '</td>' +
-        '<td class="num">' + (l.discountPct || 0) + '%</td><td class="num">' + l.taxRatePct + '%</td>' +
-        '<td class="num">' + (lineTotal ? esc(formatINR(lineTotal.taxablePaise)) : '—') + '</td></tr>';
-    }).join('');
-    const tot = inv.totals;
-    return '<div class="doc-head"><div><h3>' + esc(prof.name || 'UdyamSetu') + '</h3>' +
-      '<div class="doc-meta">' +
-      (prof.gstin ? 'GSTIN: ' + esc(prof.gstin) + '<br>' : '') +
-      (prof.address ? esc(prof.address) + '<br>' : '') +
-      (prof.phone ? 'Phone: ' + esc(prof.phone) + '<br>' : '') +
-      '</div></div>' +
-      (prof.logoDataUrl ? '<img src="' + esc(prof.logoDataUrl) + '" alt="logo">' : '') +
-      '</div>' +
-      '<h3>' + esc(kind) + (inv.status === 'draft' ? ' (' + esc(t('draftBadge')) + ')' : '') + '</h3>' +
-      '<div class="doc-meta">' +
-      (inv.number ? 'No: <strong>' + esc(inv.number) + '</strong><br>' : '') +
-      'Date: ' + esc(inv.date) +
-      (inv.fy ? ' · FY ' + esc(inv.fy) : '') + '<br>' +
-      'Party: <strong>' + esc(inv.partyName) + '</strong><br>' +
-      (inv.partyGstin ? 'Party GSTIN: ' + esc(inv.partyGstin) + '<br>' : '') +
-      'Buyer state: ' + esc(invApi.stateName(inv.buyerState)) +
-      ' · ' + (inv.intraState ? 'CGST + SGST' : 'IGST') + '<br>' +
-      (inv.linkedInvoiceNumber ? esc(t('against')) + esc(inv.linkedInvoiceNumber) + '<br>' : '') +
-      '</div>' +
-      '<table class="doc-table"><thead><tr><th>#</th><th>Item</th><th>HSN</th><th class="num">Qty</th>' +
-      '<th class="num">Rate</th><th class="num">Disc</th><th class="num">GST</th><th class="num">Taxable</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>' +
-      '<div class="doc-totals">' +
-      '<div class="trow"><span>' + esc(t('taxable')) + '</span><strong>' + esc(formatINR(tot.taxablePaise)) + '</strong></div>' +
-      (inv.intraState
-        ? '<div class="trow"><span>CGST</span><strong>' + esc(formatINR(tot.cgstPaise)) + '</strong></div>' +
-          '<div class="trow"><span>SGST</span><strong>' + esc(formatINR(tot.sgstPaise)) + '</strong></div>'
-        : '<div class="trow"><span>IGST</span><strong>' + esc(formatINR(tot.igstPaise)) + '</strong></div>') +
-      '<div class="trow"><span>' + esc(t('roundOff')) + '</span><strong>' + esc(formatINR(tot.roundOffPaise)) + '</strong></div>' +
-      '<div class="trow grand"><span>' + esc(t('grandTotal')) + '</span><strong>' + esc(formatINR(tot.roundedTotalPaise)) + '</strong></div>' +
-      '</div>' +
-      (prof.upiId ? '<p class="doc-meta">Pay via UPI: ' + esc(prof.upiId) + '</p>' : '');
+    return invApi.invoiceTemplateHtml(inv, prof, currentTemplate(), {
+      kind, taxable: t('taxable'), roundOff: t('roundOff'),
+      grandTotal: t('grandTotal'), draft: t('draftBadge'), against: t('against'),
+    });
   }
 
   async function viewInvoice(id) {
@@ -383,11 +400,58 @@
     currentInvoice = inv;
     $('detailBody').innerHTML = invoiceHtml(inv, profile);
     $('print-area').innerHTML = invoiceHtml(inv, profile);
-    $('waShareBtn').href = invApi.whatsappUrl(inv, profile);
+    const urls = invApi.invoiceShareUrls(inv, profile);
+    $('waShareBtn').href = urls.whatsapp;
+    $('smsShareBtn').href = urls.sms;
+    $('emailShareBtn').href = urls.email;
+    $('tgShareBtn').href = urls.telegram;
+    syncTemplatePicker();
+    syncShareSheetBtn();
     const isSaved = inv.status === 'saved' && inv.number;
     $('creditNoteBtn').hidden = !isSaved;
     $('debitNoteBtn').hidden = !isSaved;
     showTab('detail');
+  }
+
+  // Web Share API exists on most phones; on a browser without it the button
+  // shows the APK badge instead of failing silently.
+  function syncShareSheetBtn() {
+    const badge = $('sheetApkBadge');
+    if (!badge) return;
+    const ok = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+    badge.hidden = ok;
+  }
+
+  async function copyShareText() {
+    if (!currentInvoice) return;
+    const text = invApi.whatsappText(currentInvoice, profile);
+    const btn = $('copyShareBtn');
+    const done = () => {
+      if (!btn) return;
+      const old = btn.textContent;
+      btn.textContent = t('shareCopied');
+      setTimeout(() => { btn.textContent = old; }, 2000);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+      }
+      done();
+    } catch (e) { /* clipboard blocked — user can still use the other share buttons */ }
+  }
+
+  function downloadInvoicePng() {
+    if (!currentInvoice) return;
+    const canvas = document.createElement('canvas');
+    invApi.drawInvoicePng(currentInvoice, profile, canvas);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = invApi.docFileName(currentInvoice, 'png');
+    document.body.appendChild(a); a.click(); a.remove();
   }
 
   function downloadFile(name, text, mime) {
@@ -501,6 +565,27 @@
     if (themeMeta) themeMeta.setAttribute('content', currentTheme() === 'dark' ? '#0F1B2E' : '#16233D');
     const themeBtn = $('themeToggle');
     if (themeBtn) themeBtn.addEventListener('click', () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark'));
+    // About: Light/Dark/System mode buttons + colour scheme swatches.
+    // The saved mode/scheme are marked selected on load.
+    try {
+      const savedMode = localStorage.getItem(THEME_KEY);
+      syncModeButtons(THEME_MODES.indexOf(savedMode) >= 0 ? savedMode : 'system');
+    } catch (e) { syncModeButtons('system'); }
+    syncSchemeButtons(currentScheme());
+    document.querySelectorAll('.mode-btn[data-mode]').forEach((b) =>
+      b.addEventListener('click', () => applyThemeMode(b.getAttribute('data-mode'))));
+    document.querySelectorAll('.scheme-btn[data-scheme]').forEach((b) =>
+      b.addEventListener('click', () => setScheme(b.getAttribute('data-scheme'))));
+    // Star prompt (Home): dismissible — once dismissed it stays hidden.
+    const starCard = $('starCard');
+    const starDismissBtn = $('starDismiss');
+    let starDismissed = false;
+    try { starDismissed = localStorage.getItem('udyamsetu.starDismissed') === '1'; } catch (e) {}
+    if (starCard) starCard.hidden = starDismissed;
+    if (starDismissBtn) starDismissBtn.addEventListener('click', () => {
+      try { localStorage.setItem('udyamsetu.starDismissed', '1'); } catch (e) {}
+      if (starCard) starCard.hidden = true;
+    });
 
     // Every [data-goto] element navigates on tap — including plain cards
     // like the first-bill guide (a card that looks tappable must work).
@@ -591,6 +676,18 @@
     });
     $('printA4Btn').addEventListener('click', () => printInvoice('a4'));
     $('printThermalBtn').addEventListener('click', () => printInvoice('thermal'));
+    $('tplSelect').addEventListener('change', (e) => setTemplate(e.target.value));
+    $('copyShareBtn').addEventListener('click', copyShareText);
+    $('pdfShareBtn').addEventListener('click', () => printInvoice('a4'));
+    $('pngShareBtn').addEventListener('click', downloadInvoicePng);
+    $('sheetShareBtn').addEventListener('click', () => {
+      if (!currentInvoice) return;
+      if (navigator.share) {
+        navigator.share({ title: 'UdyamSetu', text: invApi.whatsappText(currentInvoice, profile) }).catch(() => {});
+      }
+    });
+    syncTemplatePicker();
+    syncShareSheetBtn();
     $('creditNoteBtn').addEventListener('click', async () => {
       if (!currentInvoice) return;
       const note = invApi.makeNoteDraft(currentInvoice, 'credit-note', profile);

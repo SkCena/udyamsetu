@@ -80,8 +80,8 @@ ok('first-bill guide card exists (3 steps)',
   /id="firstBillGuide"/.test(html) && /data-i18n="guideStep1"/.test(html)
   && /data-i18n="guideStep2"/.test(html) && /data-i18n="guideStep3"/.test(html));
 ok('about section exists', /<section id="tab-about" class="view" hidden>/.test(html));
-ok('app.js showTab knows home + about + calculator + guide',
-  /'home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'guide', 'about'/.test(appJs));
+ok('app.js showTab knows home + about + calculator + basiccalc + guide',
+  /'home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'basiccalc', 'guide', 'about'/.test(appJs));
 ok('app.js renders home stats on home tab', /if \(name === 'home'\) renderHome\(\);/.test(appJs));
 
 // --- 4. Language-first prompt ---
@@ -96,8 +96,8 @@ ok('app.js shows the prompt only until a language is chosen',
 // --- 5. APK-needed markers + APK download link ---
 ok('APK card exists with 3 browser-impossible features',
   /Barcode scan/.test(html) && /Home widget/.test(html) && /Background sync/.test(html));
-ok('each APK feature carries an "APK needed" badge (3 badges)',
-  (html.match(/data-i18n="apkBadge"/g) || []).length === 3);
+ok('each APK feature carries an "APK needed" badge (4 badges: 3 Home + share sheet)',
+  (html.match(/data-i18n="apkBadge"/g) || []).length === 4);
 ok('APK download link points at GitHub Releases (no fake direct .apk URL)',
   /href="https:\/\/github\.com\/SkCena\/udyamsetu\/releases"/.test(html)
   && !/\.apk"/.test(html));
@@ -161,8 +161,10 @@ ok('no teal/green colour left in styles.css (hex or name)',
 ok('navy + gold palette present (light + dark)',
   /--navy:\s*#1B2A4A/.test(css) && /--navy-dark:\s*#16233D/.test(css)
   && /--gold:\s*#C9A227/.test(css) && /--navy:\s*#D4AF37/.test(css));
-ok('header gradient is navy with a gold rule',
-  /linear-gradient\(135deg, #16233D/.test(css) && /border-bottom: 3px solid #C9A227/.test(css));
+ok('header gradient is navy with a gold rule (via --header-* vars)',
+  /--header-from: #16233D/.test(css) && /--header-line: #C9A227/.test(css)
+  && /linear-gradient\(135deg, var\(--header-from\)/.test(css)
+  && /border-bottom: 3px solid var\(--header-line\)/.test(css));
 ok('no teal/green left in index.html theme-color or app.js theme sync',
   !/#0f766e|#0b2e2a/i.test(html) && !/#0f766e|#0b2e2a/i.test(appJs));
 ok('theme-color meta is navy', /<meta name="theme-color" content="#16233D">/.test(html));

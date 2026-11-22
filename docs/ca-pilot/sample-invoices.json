@@ -1,0 +1,154 @@
+{
+  "app": "UdyamSetu",
+  "fixture": "ca-pilot-sample",
+  "fp": "112026",
+  "profile": {
+    "name": "Sharma Kirana Store",
+    "gstin": "22AAAAA0000A1ZC",
+    "phone": "9876543210",
+    "address": "Main Road, Bhubaneswar",
+    "logoDataUrl": null,
+    "upiId": "sharma@upi",
+    "invoicePrefix": "INV",
+    "nextSeq": 1,
+    "sellerState": "21"
+  },
+  "invoices": [
+    {
+      "id": "inv_mws5vxnb_p44bn4",
+      "number": "INV/2026-27/0001",
+      "fy": "2026-27",
+      "date": "2026-11-05",
+      "type": "invoice",
+      "linkedInvoiceNumber": null,
+      "partyName": "Ramesh Kumar",
+      "partyGstin": "27AAAPL1234C1ZE",
+      "buyerState": "21",
+      "intraState": true,
+      "lines": [
+        {
+          "name": "Rice 5kg",
+          "hsn": "1006",
+          "qty": 2,
+          "unitPricePaise": 50000,
+          "discountPct": 0,
+          "taxRatePct": 5
+        },
+        {
+          "name": "Sugar 1kg",
+          "hsn": "1701",
+          "qty": 3,
+          "unitPricePaise": 4500,
+          "discountPct": 10,
+          "taxRatePct": 5
+        }
+      ],
+      "totals": {
+        "taxablePaise": 112150,
+        "cgstPaise": 2804,
+        "sgstPaise": 2804,
+        "igstPaise": 0,
+        "totalPaise": 117758,
+        "roundedTotalPaise": 117800,
+        "roundOffPaise": 42
+      },
+      "status": "saved"
+    },
+    {
+      "id": "inv_mws5vxnc_snnlnv",
+      "number": "INV/2026-27/0002",
+      "fy": "2026-27",
+      "date": "2026-11-12",
+      "type": "invoice",
+      "linkedInvoiceNumber": null,
+      "partyName": "Delhi Traders",
+      "partyGstin": "07AAAAA0000A1Z5",
+      "buyerState": "07",
+      "intraState": false,
+      "lines": [
+        {
+          "name": "Atta 10kg",
+          "hsn": "1101",
+          "qty": 5,
+          "unitPricePaise": 40000,
+          "discountPct": 0,
+          "taxRatePct": 5
+        }
+      ],
+      "totals": {
+        "taxablePaise": 200000,
+        "cgstPaise": 0,
+        "sgstPaise": 0,
+        "igstPaise": 10000,
+        "totalPaise": 210000,
+        "roundedTotalPaise": 210000,
+        "roundOffPaise": 0
+      },
+      "status": "saved"
+    },
+    {
+      "id": "inv_mws5vxnc_2ec0vm",
+      "number": "INV/2026-27/0003",
+      "fy": "2026-27",
+      "date": "2026-11-18",
+      "type": "invoice",
+      "linkedInvoiceNumber": null,
+      "partyName": "Walk-in Customer",
+      "partyGstin": null,
+      "buyerState": "21",
+      "intraState": true,
+      "lines": [
+        {
+          "name": "Tea 250g",
+          "hsn": "0902",
+          "qty": 4,
+          "unitPricePaise": 12000,
+          "discountPct": 0,
+          "taxRatePct": 5
+        }
+      ],
+      "totals": {
+        "taxablePaise": 48000,
+        "cgstPaise": 1200,
+        "sgstPaise": 1200,
+        "igstPaise": 0,
+        "totalPaise": 50400,
+        "roundedTotalPaise": 50400,
+        "roundOffPaise": 0
+      },
+      "status": "saved"
+    },
+    {
+      "id": "inv_mws5vxnc_eelwm1",
+      "number": "INV/2026-27/0004",
+      "fy": "2026-27",
+      "date": "2026-11-20",
+      "type": "credit-note",
+      "linkedInvoiceNumber": "INV/2026-27/0001",
+      "partyName": "Ramesh Kumar",
+      "partyGstin": "27AAAPL1234C1ZE",
+      "buyerState": "21",
+      "intraState": true,
+      "lines": [
+        {
+          "name": "Rice 5kg",
+          "hsn": "1006",
+          "qty": 1,
+          "unitPricePaise": 50000,
+          "discountPct": 0,
+          "taxRatePct": 5
+        }
+      ],
+      "totals": {
+        "taxablePaise": -50000,
+        "cgstPaise": -1250,
+        "sgstPaise": -1250,
+        "igstPaise": 0,
+        "totalPaise": -52500,
+        "roundedTotalPaise": -52500,
+        "roundOffPaise": 0
+      },
+      "status": "saved"
+    }
+  ]
+}

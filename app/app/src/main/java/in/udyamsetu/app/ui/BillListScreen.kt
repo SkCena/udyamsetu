@@ -24,10 +24,12 @@ import androidx.navigation.NavHostController
 import `in`.udyamsetu.app.R
 import `in`.udyamsetu.app.data.InvoiceEntity
 import `in`.udyamsetu.app.logic.decodeLines
+import `in`.udyamsetu.app.logic.shareTextForDoc
 
 @Composable
 fun BillListScreen(vm: AppViewModel, nav: NavHostController) {
     val invoices by vm.repo.observeInvoices().collectAsState(initial = emptyList())
+    val profile by vm.profile.collectAsState(initial = null)
     var selected by remember { mutableStateOf<InvoiceEntity?>(null) }
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item { SectionTitle(stringResource(R.string.list_title)) }
@@ -51,6 +53,18 @@ fun BillListScreen(vm: AppViewModel, nav: NavHostController) {
                             Text("• ${line.name} × ${line.qty} — ${formatRupees(line.unitPricePaise)} (${line.taxRatePct}% GST)")
                         }
                         Text("${stringResource(R.string.taxable)} ${formatRupees(inv.taxablePaise)}")
+                        // Same share row as after saving a bill.
+                        ShareButtons(
+                            shareText = shareTextForDoc(
+                                typeLabel = stringResource(docTypeLabelRes(inv.type)),
+                                number = inv.number,
+                                shopName = profile?.name ?: "",
+                                partyName = inv.partyName,
+                                totalPaise = inv.roundedTotalPaise,
+                                upiId = profile?.upiId ?: "",
+                            ),
+                            subject = "${stringResource(docTypeLabelRes(inv.type))} ${inv.number}",
+                        )
                     }
                 }
             }
