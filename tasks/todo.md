@@ -12,4 +12,6 @@
   - Acceptance: setup persists, billing totals from core, print + WhatsApp, credit/debit notes
   - Verify: node site/app.test.js → 78 passed, 0 failed; node --check clean on all JS files
 - [ ] Task 5: Android app + CI workflow — STOPPED, see tasks/plan.md Risks
-- [ ] Task 6: Push Phase 1.1 to main + verify head commit
+- [x] Task 6: Push Phase 1.1 to main + verify head commit
+  - Acceptance: head commit on main contains all 22 files, repo stays private
+  - Verify: commit 84a0f336b00f66dc529f446102e864352e0d8e27, 22 blobs, private=true
