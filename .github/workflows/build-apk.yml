@@ -1,0 +1,52 @@
+# UdyamSetu — Build APK (GitHub Actions only).
+# Local Gradle is blocked on the dev VM (daemon IPC: "Could not receive a
+# message from the daemon"), so CI is the only build route.
+# The Gradle project lives in app/ (repo root also holds site/ + core/),
+# so every Gradle step runs with working-directory: app.
+# This file CANNOT be pushed via the GitHub API (the token has no workflow
+# scope) — it must be added via the GitHub web UI the first time:
+# repo -> Add file -> Create new file -> .github/workflows/build-apk.yml
+# After that, later pushes through the API work fine.
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # NOTE (2026-11-22): gradle-wrapper.jar is binary and cannot be pushed
+      # via the GitHub API (UTF-8 only), so CI does NOT use ./gradlew.
+      # setup-gradle installs Gradle 8.7 (same as wrapper properties) and
+      # the build runs the `gradle` command directly. If the jar is ever
+      # uploaded via the web UI, ./gradlew can be used again.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build, test, lint
+        run: gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --stacktrace
+
+      - name: Upload debug APK (artifact, not a Release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: udyamsetu-debug-apk
+          path: app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
