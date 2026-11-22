@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="description" content="UdyamSetu — chhoti dukaan ke liye free offline GST billing. Setup + Invoice, bina internet, bina paywall.">
+<title>UdyamSetu — GST Billing</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script src="../core/gst.js" defer></script>
+<script src="store.js" defer></script>
+<script src="invoice.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark">₹</span>
+    <div>
+      <h1>UdyamSetu</h1>
+      <p class="tagline" data-i18n="tagline">Chhoti dukaan ka GST billing — free, offline</p>
+    </div>
+  </div>
+  <button id="langToggle" class="btn btn-ghost" type="button">English</button>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <button class="tab active" data-tab="setup" type="button" data-i18n="tabSetup">Setup</button>
+  <button class="tab" data-tab="billing" type="button" data-i18n="tabBilling">Naya Bill</button>
+  <button class="tab" data-tab="list" type="button" data-i18n="tabList">Bill List</button>
+</nav>
+
+<main id="app">
+  <!-- ============ SETUP ============ -->
+  <section id="tab-setup" class="view">
+    <h2 data-i18n="setupTitle">Vyavsay Setup — Business Setup</h2>
+    <p class="hint" data-i18n="setupHint">Ek baar bhar dein — har bill par yehi details aayengi. Badal bhi sakte hain.</p>
+    <form id="setupForm" novalidate>
+      <label class="field">
+        <span data-i18n="bizName">Dukaan / Business ka naam *</span>
+        <input id="bizName" type="text" autocomplete="organization" data-i18n-ph="bizNamePh" placeholder="Jaise: Sharma Kirana Store">
+      </label>
+      <label class="field">
+        <span data-i18n="bizGstin">GSTIN (agar hai — optional)</span>
+        <input id="bizGstin" type="text" inputmode="latin" autocapitalize="characters" spellcheck="false"
+               maxlength="15" data-i18n-ph="bizGstinPh" placeholder="22AAAAA0000A1Z5">
+        <small id="bizGstinError" class="error" hidden data-i18n="gstinError">GSTIN galat hai — 15 character, sahi format mein likhein.</small>
+      </label>
+      <label class="field">
+        <span data-i18n="bizPhone">Phone (optional)</span>
+        <input id="bizPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="98765 43210">
+      </label>
+      <label class="field">
+        <span data-i18n="bizAddress">Pata / Address</span>
+        <textarea id="bizAddress" rows="2" data-i18n-ph="bizAddressPh" placeholder="Dukaan ka pata"></textarea>
+      </label>
+      <div class="field">
+        <span data-i18n="logoLabel">Logo (optional)</span>
+        <div class="logo-row">
+          <img id="logoPreview" class="logo-preview" alt="" hidden>
+          <input id="logoInput" type="file" accept="image/*">
+        </div>
+        <button id="logoRemove" class="btn btn-ghost btn-small" type="button" hidden data-i18n="logoRemove">Logo hatayein</button>
+      </div>
+      <label class="field">
+        <span data-i18n="upiLabel">UPI ID (payment ke liye, optional)</span>
+        <input id="upiId" type="text" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="dukaan@upi">
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span data-i18n="invPrefix">Bill series prefix</span>
+          <input id="invPrefix" type="text" autocapitalize="characters" spellcheck="false" maxlength="10" value="INV">
+        </label>
+        <label class="field">
+          <span data-i18n="nextSeq">Agla bill number</span>
+          <input id="nextSeq" type="number" min="1" step="1" value="1">
+        </label>
+      </div>
+      <label class="field">
+        <span data-i18n="sellerState">Aapka rajya / State (seller)</span>
+        <select id="sellerState"></select>
+      </label>
+      <p id="setupMsg" class="msg" role="status"></p>
+      <button class="btn btn-primary" type="submit" data-i18n="saveSetup">Setup Save Karein</button>
+    </form>
+  </section>
+
+  <!-- ============ BILLING ============ -->
+  <section id="tab-billing" class="view" hidden>
+    <h2 data-i18n="billingTitle">Naya Bill — New Invoice</h2>
+    <p id="setupWarn" class="warn" hidden data-i18n="setupWarn">Pehle Setup mein dukaan ka naam bharein — phir bill banega.</p>
+    <p id="noteBanner" class="note-banner" hidden></p>
+    <form id="billingForm" novalidate>
+      <label class="field">
+        <span data-i18n="partyName">Graahak / Party ka naam *</span>
+        <input id="partyName" type="text" autocomplete="off" data-i18n-ph="partyNamePh" placeholder="Jaise: Ramesh Kumar">
+      </label>
+      <label class="field">
+        <span data-i18n="partyGstin">Party GSTIN (optional)</span>
+        <input id="partyGstin" type="text" inputmode="latin" autocapitalize="characters" spellcheck="false"
+               maxlength="15" placeholder="22AAAAA0000A1Z5">
+        <small id="partyGstinError" class="error" hidden data-i18n="gstinError">GSTIN galat hai — 15 character, sahi format mein likhein.</small>
+      </label>
+      <label class="field">
+        <span data-i18n="buyerState">Graahak ka rajya / State (buyer)</span>
+        <select id="buyerState"></select>
+      </label>
+      <p class="tax-kind"><span data-i18n="taxKind">Tax:</span> <strong id="taxKindLabel">CGST + SGST</strong></p>
+
+      <h3 data-i18n="linesTitle">Samaan — Items</h3>
+      <div id="lines"></div>
+      <button id="addLine" class="btn btn-ghost" type="button" data-i18n="addLine">+ Item jodein</button>
+
+      <div id="totals" class="totals" aria-live="polite">
+        <div class="trow"><span data-i18n="taxable">Taxable</span><strong id="tTaxable">₹0.00</strong></div>
+        <div class="trow" id="rowCgst"><span>CGST</span><strong id="tCgst">₹0.00</strong></div>
+        <div class="trow" id="rowSgst"><span>SGST</span><strong id="tSgst">₹0.00</strong></div>
+        <div class="trow" id="rowIgst" hidden><span>IGST</span><strong id="tIgst">₹0.00</strong></div>
+        <div class="trow"><span data-i18n="roundOff">Round off</span><strong id="tRoundOff">₹0.00</strong></div>
+        <div class="trow grand"><span data-i18n="grandTotal">Kul Total</span><strong id="tGrand">₹0.00</strong></div>
+      </div>
+
+      <p id="billingMsg" class="msg" role="status"></p>
+      <div class="btn-row">
+        <button id="saveDraftBtn" class="btn btn-ghost" type="button" data-i18n="saveDraft">Draft Save</button>
+        <button id="saveInvoiceBtn" class="btn btn-primary" type="submit" data-i18n="saveInvoice">Bill Save Karein</button>
+      </div>
+      <button id="clearFormBtn" class="btn btn-ghost btn-small" type="button" data-i18n="clearForm">Form saaf karein</button>
+    </form>
+  </section>
+
+  <!-- ============ LIST ============ -->
+  <section id="tab-list" class="view" hidden>
+    <h2 data-i18n="listTitle">Bill List — Saved Bills</h2>
+    <p class="hint" data-i18n="listHint">Bill par tap karein — dekhein, print karein, WhatsApp par bhejein.</p>
+    <div id="invoiceList" class="invoice-list"></div>
+    <p id="emptyList" class="hint" hidden data-i18n="noInvoices">Abhi koi bill nahi hai. Pehla bill "Naya Bill" se banayein.</p>
+  </section>
+
+  <!-- ============ DETAIL ============ -->
+  <section id="tab-detail" class="view" hidden>
+    <button id="backToList" class="btn btn-ghost btn-small" type="button" data-i18n="backToList">← Bill List</button>
+    <div id="detailBody" class="invoice-doc"></div>
+    <div class="btn-row wrap">
+      <button id="printA4Btn" class="btn btn-primary" type="button" data-i18n="printA4">Print — A4</button>
+      <button id="printThermalBtn" class="btn" type="button" data-i18n="printThermal">Print — 80mm</button>
+      <a id="waShareBtn" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" data-i18n="whatsapp">WhatsApp par bhejein</a>
+    </div>
+    <div class="btn-row wrap">
+      <button id="creditNoteBtn" class="btn btn-ghost" type="button" data-i18n="creditNote">Credit Note banayein</button>
+      <button id="debitNoteBtn" class="btn btn-ghost" type="button" data-i18n="debitNote">Debit Note banayein</button>
+    </div>
+    <p class="hint" data-i18n="noteHint">Credit Note = wapas / kami (negative). Debit Note = extra charge (positive). Dono purane bill se judte hain.</p>
+  </section>
+</main>
+
+<footer class="app-footer">
+  <p data-i18n="footer">UdyamSetu — free, offline, aapka data aapke phone par hi rehta hai.</p>
+</footer>
+
+<!-- Print-only area: filled with the same invoice HTML as the detail view. -->
+<div id="print-area" aria-hidden="true"></div>
+
+</body>
+</html>
