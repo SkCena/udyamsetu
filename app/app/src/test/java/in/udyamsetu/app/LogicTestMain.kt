@@ -15,14 +15,29 @@ import `in`.udyamsetu.app.logic.SavedInvoice
 import `in`.udyamsetu.app.logic.TaxHeads
 import `in`.udyamsetu.app.logic.applyInvoiceToStock
 import `in`.udyamsetu.app.logic.billTotals
+import `in`.udyamsetu.app.logic.billTotalsForType
+import `in`.udyamsetu.app.logic.calcExclusive
+import `in`.udyamsetu.app.logic.calcInclusive
 import `in`.udyamsetu.app.logic.cashFlow
 import `in`.udyamsetu.app.logic.csvCell
+import `in`.udyamsetu.app.logic.decodeBackup
 import `in`.udyamsetu.app.logic.decodeLines
+import `in`.udyamsetu.app.logic.decryptBackup
+import `in`.udyamsetu.app.logic.docNumberPrefix
 import `in`.udyamsetu.app.logic.dueReminders
+import `in`.udyamsetu.app.logic.encodeBackup
 import `in`.udyamsetu.app.logic.encodeLines
+import `in`.udyamsetu.app.logic.encryptBackup
+import `in`.udyamsetu.app.logic.BackupData
+import `in`.udyamsetu.app.logic.InvoiceBackup
+import `in`.udyamsetu.app.logic.PartyBackup
+import `in`.udyamsetu.app.logic.ProfileBackup
 import `in`.udyamsetu.app.logic.expiringBatches
+import `in`.udyamsetu.app.logic.extractGstFromTotal
 import `in`.udyamsetu.app.logic.gstr1Summary
 import `in`.udyamsetu.app.logic.gstr3bSummary
+import `in`.udyamsetu.app.logic.isGstDoc
+import `in`.udyamsetu.app.logic.isSaleDoc
 import `in`.udyamsetu.app.logic.lowStock
 import `in`.udyamsetu.app.logic.negateTotals
 import `in`.udyamsetu.app.logic.partyBalance
@@ -33,6 +48,8 @@ import `in`.udyamsetu.app.logic.purchaseSummary
 import `in`.udyamsetu.app.logic.reconcile2A2B
 import `in`.udyamsetu.app.logic.PortalRow
 import `in`.udyamsetu.app.logic.salesSummary
+import `in`.udyamsetu.app.logic.shareTextForDoc
+import `in`.udyamsetu.app.logic.signedTotals
 import `in`.udyamsetu.app.logic.statement
 import `in`.udyamsetu.app.logic.stockQty
 import `in`.udyamsetu.app.logic.tallyCsv
@@ -46,10 +63,10 @@ private fun eq(name: String, actual: Any?, expected: Any?) {
     if (actual == expected) pass++ else { fail++; failures += "$name: expected=$expected actual=$actual" }
 }
 
-private fun sampleInvoice(number: String, date: String, total: Long, taxable: Long, cgst: Long, sgst: Long, igst: Long) =
+private fun sampleInvoice(number: String, date: String, total: Long, taxable: Long, cgst: Long, sgst: Long, igst: Long, type: String = "invoice") =
     SavedInvoice(
         number = number, date = date, partyName = "Ramesh", partyGstin = null,
-        buyerState = "21", intraState = true, type = "invoice", status = "saved",
+        buyerState = "21", intraState = true, type = type, status = "saved",
         fy = "2026-27", lines = listOf(BillLine(1, taxable, 0, 18.0)),
         taxablePaise = taxable, cgstPaise = cgst, sgstPaise = sgst, igstPaise = igst,
         roundedTotalPaise = total,
@@ -135,6 +152,98 @@ fun main() {
     eq("pl.gross", profitLoss(invs, ledger, 0L).grossProfitPaise, 17700L - 7000L)
     eq("csv.escape", csvCell("a,b\"c"), "\"a,b\"\"c\"")
     eq("tally.csv.header", tallyCsv(invs).lines().first(), "Date,Voucher No,Party,Type,Taxable,CGST,SGST,IGST,Total")
+
+    // GST calculator: exclusive adds tax, inclusive splits it back out.
+    val ex = calcExclusive(10000L, 18.0)
+    eq("calc.ex.gst", ex.gstPaise, 1800L)
+    eq("calc.ex.total", ex.totalPaise, 11800L)
+    eq("calc.ex.base", ex.basePaise, 10000L)
+    val inc = calcInclusive(11800L, 18.0)
+    eq("calc.in.base", inc.basePaise, 10000L)
+    eq("calc.in.gst", inc.gstPaise, 1800L)
+    eq("calc.in.total", inc.totalPaise, 11800L)
+    val inc5 = calcInclusive(1000L, 5.0)
+    eq("calc.in5.base", inc5.basePaise, 952L)
+    eq("calc.in5.gst", inc5.gstPaise, 48L)
+    eq("calc.in5.sum", inc5.basePaise + inc5.gstPaise, 1000L)
+    eq("calc.extract", extractGstFromTotal(11800L, 18.0).gstPaise, 1800L)
+    eq("calc.zero", calcExclusive(0L, 18.0).totalPaise, 0L)
+    var threwCalc = false
+    try { calcExclusive(100L, 30.0) } catch (_: IllegalArgumentException) { threwCalc = true }
+    eq("calc.bad-rate", threwCalc, true)
+    var threwNeg = false
+    try { calcInclusive(-100L, 18.0) } catch (_: IllegalArgumentException) { threwNeg = true }
+    eq("calc.negative", threwNeg, true)
+
+    // Bill types: tax rules follow the document type.
+    val gstLines = listOf(BillLine(2, 10000, 0, 18.0, "1001", "Rice"))
+    eq("type.invoice.tax", billTotalsForType(gstLines, true, "invoice").cgstPaise, 1800L)
+    eq("type.nongst.tax", billTotalsForType(gstLines, true, "non-gst").cgstPaise, 0L)
+    eq("type.nongst.total", billTotalsForType(gstLines, true, "non-gst").roundedTotalPaise, 20000L)
+    eq("type.receipt.tax", billTotalsForType(gstLines, true, "receipt").igstPaise, 0L)
+    eq("type.estimate.eq-invoice", billTotalsForType(gstLines, true, "estimate").roundedTotalPaise,
+        billTotalsForType(gstLines, true, "invoice").roundedTotalPaise)
+    eq("type.credit.negative", billTotalsForType(gstLines, true, "credit-note").roundedTotalPaise, -23600L)
+    eq("type.debit.positive", billTotalsForType(gstLines, true, "debit-note").roundedTotalPaise, 23600L)
+    eq("type.signed.debit", signedTotals(billTotals(gstLines, true), "debit-note").roundedTotalPaise, 23600L)
+    eq("type.prefix.est", docNumberPrefix("estimate", "INV"), "EST")
+    eq("type.prefix.rcp", docNumberPrefix("receipt", "INV"), "RCP")
+    eq("type.prefix.inv", docNumberPrefix("invoice", "INV"), "INV")
+    eq("type.isSale.est", isSaleDoc("estimate"), false)
+    eq("type.isSale.nongst", isSaleDoc("non-gst"), true)
+    eq("type.isGst.receipt", isGstDoc("receipt"), false)
+    eq("type.isGst.note", isGstDoc("credit-note"), true)
+    val share = shareTextForDoc("GST Bill", "INV/2026-27/0001", "Sharma Store", "Ramesh", 23600L, "shop@upi")
+    eq("type.share.has-number", share.contains("INV/2026-27/0001"), true)
+    eq("type.share.has-total", share.contains("₹236.00"), true)
+    eq("type.share.has-upi", share.contains("shop@upi"), true)
+    val shareCredit = shareTextForDoc("Credit Note", "INV/2026-27/0002", "Sharma Store", "Ramesh", -23600L, "")
+    eq("type.share.credit-neg", shareCredit.contains("-₹236.00"), true)
+
+    // New types stay out of GST returns; non-GST still counts as a sale.
+    val mixed = listOf(
+        sampleInvoice("INV/2026-27/0001", "2026-11-01", 11800L, 10000L, 900L, 900L, 0L),
+        sampleInvoice("EST/2026-27/0001", "2026-11-01", 11800L, 10000L, 900L, 900L, 0L, "estimate"),
+        sampleInvoice("INV/2026-27/0002", "2026-11-02", 5000L, 5000L, 0L, 0L, 0L, "non-gst"),
+        sampleInvoice("RCP/2026-27/0001", "2026-11-02", 5000L, 5000L, 0L, 0L, 0L, "receipt"),
+    )
+    eq("gstr1.excludes-estimate", gstr1Summary(mixed).totals.taxablePaise, 10000L)
+    eq("gstr1.count-only-invoice", gstr1Summary(mixed).invoiceCount, 1)
+    eq("sales.includes-nongst", salesSummary(mixed).totalPaise, 16800L)
+    eq("sales.count", salesSummary(mixed).count, 2)
+    val rec2 = reconcile2A2B(mixed, listOf(PortalRow("INV/2026-27/0001", null, 10000L, 1800L)))
+    eq("reconcile.ignores-estimate", rec2.missingInPortal, emptyList<String>())
+
+    // Drive backup: codec round-trip (incl. '|' / '%' / newline in names)
+    // + passphrase encryption round-trip + wrong passphrase fails.
+    val backup = BackupData(
+        profile = ProfileBackup(name = "Sharma | Store %\nLtd", gstin = "22AAAAA0000A1Z5", nextSeq = 7),
+        parties = listOf(PartyBackup("p1", "Ramesh | Kumar", "99999", null, "21", "customer", 1000L)),
+        invoices = listOf(
+            InvoiceBackup(
+                id = "inv-1", number = "INV/2026-27/0001", date = "2026-11-01",
+                partyName = "Ramesh", buyerState = "21", intraState = true,
+                type = "invoice", fy = "2026-27",
+                linesEncoded = encodeLines(listOf(BillLine(1, 10000, 0, 18.0, "1001", "Rice | Basmati"))),
+                taxablePaise = 10000L, cgstPaise = 900L, sgstPaise = 900L,
+                igstPaise = 0L, totalPaise = 11800L, roundedTotalPaise = 11800L, roundOffPaise = 0L,
+            ),
+        ),
+    )
+    val encoded = encodeBackup(backup)
+    eq("backup.roundtrip", decodeBackup(encoded), backup)
+    val encrypted = encryptBackup(encoded.toByteArray(Charsets.UTF_8), "my-secret-pass")
+    val decrypted = String(decryptBackup(encrypted, "my-secret-pass"), Charsets.UTF_8)
+    eq("backup.encrypt-roundtrip", decrypted, encoded)
+    var threwPass = false
+    try { decryptBackup(encrypted, "wrong-pass") } catch (_: Exception) { threwPass = true }
+    eq("backup.wrong-pass-fails", threwPass, true)
+    var threwHeader = false
+    try { decodeBackup("NOT-A-BACKUP|1\n") } catch (_: IllegalArgumentException) { threwHeader = true }
+    eq("backup.bad-header", threwHeader, true)
+    var threwVersion = false
+    try { decodeBackup("UDYAMSETU-BACKUP|99\n") } catch (_: IllegalArgumentException) { threwVersion = true }
+    eq("backup.bad-version", threwVersion, true)
 
     println("Logic tests: $pass passed, $fail failed")
     if (failures.isNotEmpty()) {

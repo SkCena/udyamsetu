@@ -5,18 +5,32 @@
 // stock movements (HSN/name match). Screens never touch DAOs directly.
 package `in`.udyamsetu.app.data
 
-import `in`.udyamsetu.app.core.calcInvoice
 import `in`.udyamsetu.app.core.invoiceNumber
+import `in`.udyamsetu.app.logic.AdvanceBackup
+import `in`.udyamsetu.app.logic.AttendanceBackup
+import `in`.udyamsetu.app.logic.BackupData
+import `in`.udyamsetu.app.logic.BatchBackup
 import `in`.udyamsetu.app.logic.BillLine
+import `in`.udyamsetu.app.logic.DOC_ESTIMATE
+import `in`.udyamsetu.app.logic.DOC_RECEIPT
+import `in`.udyamsetu.app.logic.EmployeeBackup
+import `in`.udyamsetu.app.logic.ExpenseBackup
+import `in`.udyamsetu.app.logic.InvoiceBackup
+import `in`.udyamsetu.app.logic.ItemBackup
+import `in`.udyamsetu.app.logic.LedgerBackup
 import `in`.udyamsetu.app.logic.LedgerRow
+import `in`.udyamsetu.app.logic.MovementBackup
 import `in`.udyamsetu.app.logic.MovementRow
+import `in`.udyamsetu.app.logic.PartyBackup
 import `in`.udyamsetu.app.logic.PartyRow
+import `in`.udyamsetu.app.logic.ProfileBackup
 import `in`.udyamsetu.app.logic.SavedInvoice
 import `in`.udyamsetu.app.logic.applyInvoiceToStock
+import `in`.udyamsetu.app.logic.billTotalsForType
 import `in`.udyamsetu.app.logic.decodeLines
+import `in`.udyamsetu.app.logic.docNumberPrefix
 import `in`.udyamsetu.app.logic.encodeLines
-import `in`.udyamsetu.app.logic.negateTotals
-import `in`.udyamsetu.app.logic.toInput
+import `in`.udyamsetu.app.logic.isSaleDoc
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -77,10 +91,14 @@ class Repository(private val db: AppDatabase) {
         invoiceDao.saved().map { it.toSavedInvoice() }
 
     /**
-     * Save a bill: totals from the shared core, invoice number from the
-     * profile series (only on final save — drafts never consume a number),
-     * ledger entry for a credit sale, stock movements for matched items.
-     * Returns the saved invoice number.
+     * Save a bill: totals from the shared core, per document type
+     * (logic/BillTypes.kt — non-GST / receipt force tax to zero, a credit
+     * note negates, a debit note stays positive). Invoice number from the
+     * profile series (only on final save — drafts never consume a number);
+     * estimates and receipts use their own EST / RCP series. Ledger entry
+     * for a credit sale (GST or non-GST bill). Stock movements for matched
+     * items — only for real sales, never for an estimate / receipt.
+     * Returns the saved document number.
      */
     suspend fun saveInvoice(
         profile: ProfileEntity,
@@ -91,9 +109,8 @@ class Repository(private val db: AppDatabase) {
         type: String = "invoice",
     ): String {
         val intraState = buyerState == profile.sellerState
-        val calc = calcInvoice(lines.map { it.toInput(intraState) })
-        val finalCalc = if (type == "credit-note" || type == "debit-note") negateTotals(calc) else calc
-        val number = invoiceNumber(profile.invoicePrefix, currentFy(), profile.nextSeq)
+        val finalCalc = billTotalsForType(lines, intraState, type)
+        val number = invoiceNumber(docNumberPrefix(type, profile.invoicePrefix), currentFy(), profile.nextSeq)
         val id = "inv-$number"
         val entity = InvoiceEntity(
             id = id, number = number, date = date,
@@ -111,8 +128,9 @@ class Repository(private val db: AppDatabase) {
         // Advance the series only on final save.
         profileDao.save(profile.copy(nextSeq = profile.nextSeq + 1))
         // Credit sale -> party owes us (positive delta). Notes are signed
-        // by their negated totals, so the same rule holds.
-        if (party != null && type == "invoice") {
+        // by their negated totals, so the same rule holds. Estimates and
+        // receipts are not sales — no ledger entry.
+        if (party != null && isSaleDoc(type)) {
             partyDao.saveEntry(
                 LedgerEntryEntity(
                     id = "led-$id", partyId = party.id, date = date,
@@ -121,17 +139,21 @@ class Repository(private val db: AppDatabase) {
                 ),
             )
         }
-        // Stock: take matched items out.
-        val items = itemDao.allItems()
-        val movements = applyInvoiceToStock(
-            lines,
-            items.map { `in`.udyamsetu.app.logic.ItemRow(it.id, it.name, it.hsn, it.reorderLevel) },
-            number, date,
-        )
-        for (m in movements) {
-            itemDao.saveMovement(
-                MovementEntity(id = m.id, itemId = m.itemId, date = m.date, kind = m.kind, qty = m.qty, ref = m.ref),
+        // Stock: take matched items out — only for real sales. An estimate
+        // or a receipt must never change stock (same rule as before for
+        // notes: their previous stock behaviour is left untouched).
+        if (type != DOC_ESTIMATE && type != DOC_RECEIPT) {
+            val items = itemDao.allItems()
+            val movements = applyInvoiceToStock(
+                lines,
+                items.map { `in`.udyamsetu.app.logic.ItemRow(it.id, it.name, it.hsn, it.reorderLevel) },
+                number, date,
             )
+            for (m in movements) {
+                itemDao.saveMovement(
+                    MovementEntity(id = m.id, itemId = m.itemId, date = m.date, kind = m.kind, qty = m.qty, ref = m.ref),
+                )
+            }
         }
         return number
     }
@@ -144,6 +166,103 @@ class Repository(private val db: AppDatabase) {
             "Total: ₹$total (incl. GST)\n" +
             (if (profile.upiId.isNotEmpty()) "Pay via UPI: ${profile.upiId}\n" else "") +
             "— sent from UdyamSetu (free)"
+    }
+
+    // --- Drive backup (snapshot / merge-restore) --------------------------
+    /** Read the whole database into one BackupData (Drive upload input). */
+    suspend fun backupSnapshot(): BackupData {
+        val p = getProfile()
+        return BackupData(
+            profile = ProfileBackup(
+                name = p.name, gstin = p.gstin, phone = p.phone,
+                address = p.address, logoDataUrl = p.logoDataUrl,
+                upiId = p.upiId, invoicePrefix = p.invoicePrefix,
+                nextSeq = p.nextSeq, sellerState = p.sellerState,
+                shopType = p.shopType, sellsWhat = p.sellsWhat,
+            ),
+            parties = partyDao.allParties().map {
+                PartyBackup(it.id, it.name, it.phone, it.gstin, it.state, it.kind, it.openingBalancePaise)
+            },
+            ledger = partyDao.allLedger().map {
+                LedgerBackup(it.id, it.partyId, it.date, it.kind, it.amountPaise, it.note)
+            },
+            items = itemDao.allItems().map {
+                ItemBackup(it.id, it.name, it.hsn, it.unit, it.taxRatePct, it.purchasePricePaise, it.salePricePaise, it.reorderLevel, it.godown)
+            },
+            batches = itemDao.allBatches().map {
+                BatchBackup(it.id, it.itemId, it.batchNo, it.expiry, it.qty)
+            },
+            movements = itemDao.allMovements().map {
+                MovementBackup(it.id, it.itemId, it.batchId, it.date, it.kind, it.qty, it.godown, it.ref)
+            },
+            invoices = invoiceDao.all().map {
+                InvoiceBackup(
+                    id = it.id, number = it.number, date = it.date,
+                    partyId = it.partyId, partyName = it.partyName,
+                    partyGstin = it.partyGstin, buyerState = it.buyerState,
+                    intraState = it.intraState, type = it.type, status = it.status,
+                    fy = it.fy, linesEncoded = it.linesJson,
+                    taxablePaise = it.taxablePaise, cgstPaise = it.cgstPaise,
+                    sgstPaise = it.sgstPaise, igstPaise = it.igstPaise,
+                    totalPaise = it.totalPaise,
+                    roundedTotalPaise = it.roundedTotalPaise,
+                    roundOffPaise = it.roundOffPaise,
+                )
+            },
+            employees = payrollDao.allEmployees().map {
+                EmployeeBackup(it.id, it.name, it.monthlySalaryPaise, it.pfPct, it.esiPct, it.ptPaise, it.tdsPaise)
+            },
+            attendance = payrollDao.allAttendance().map {
+                AttendanceBackup(it.id, it.employeeId, it.month, it.presentDays, it.totalDays)
+            },
+            advances = payrollDao.allAdvances().map {
+                AdvanceBackup(it.id, it.employeeId, it.month, it.amountPaise)
+            },
+            expenses = payrollDao.allExpenses().map {
+                ExpenseBackup(it.id, it.date, it.category, it.amountPaise, it.note)
+            },
+        )
+    }
+
+    /**
+     * Merge-restore a backup: every row is inserted with REPLACE, so
+     * backup rows overwrite same-id rows and anything not in the backup
+     * stays untouched. A restore never deletes.
+     */
+    suspend fun restoreBackupData(data: BackupData) {
+        val p = data.profile
+        profileDao.save(
+            ProfileEntity(
+                name = p.name, gstin = p.gstin, phone = p.phone,
+                address = p.address, logoDataUrl = p.logoDataUrl,
+                upiId = p.upiId, invoicePrefix = p.invoicePrefix,
+                nextSeq = p.nextSeq, sellerState = p.sellerState,
+                shopType = p.shopType, sellsWhat = p.sellsWhat,
+            ),
+        )
+        for (row in data.parties) partyDao.save(PartyEntity(row.id, row.name, row.phone, row.gstin, row.state, row.kind, row.openingBalancePaise))
+        for (row in data.ledger) partyDao.saveEntry(LedgerEntryEntity(row.id, row.partyId, row.date, row.kind, row.amountPaise, row.note))
+        for (row in data.items) itemDao.save(ItemEntity(row.id, row.name, row.hsn, row.unit, row.taxRatePct, row.purchasePricePaise, row.salePricePaise, row.reorderLevel, row.godown))
+        for (row in data.batches) itemDao.saveBatch(BatchEntity(row.id, row.itemId, row.batchNo, row.expiry, row.qty))
+        for (row in data.movements) itemDao.saveMovement(MovementEntity(row.id, row.itemId, row.batchId, row.date, row.kind, row.qty, row.godown, row.ref))
+        for (row in data.invoices) invoiceDao.save(
+            InvoiceEntity(
+                id = row.id, number = row.number, date = row.date,
+                partyId = row.partyId, partyName = row.partyName,
+                partyGstin = row.partyGstin, buyerState = row.buyerState,
+                intraState = row.intraState, type = row.type, status = row.status,
+                fy = row.fy, linesJson = row.linesEncoded,
+                taxablePaise = row.taxablePaise, cgstPaise = row.cgstPaise,
+                sgstPaise = row.sgstPaise, igstPaise = row.igstPaise,
+                totalPaise = row.totalPaise,
+                roundedTotalPaise = row.roundedTotalPaise,
+                roundOffPaise = row.roundOffPaise,
+            ),
+        )
+        for (row in data.employees) payrollDao.saveEmployee(EmployeeEntity(row.id, row.name, row.monthlySalaryPaise, row.pfPct, row.esiPct, row.ptPaise, row.tdsPaise))
+        for (row in data.attendance) payrollDao.saveAttendance(AttendanceEntity(row.id, row.employeeId, row.month, row.presentDays, row.totalDays))
+        for (row in data.advances) payrollDao.saveAdvance(AdvanceEntity(row.id, row.employeeId, row.month, row.amountPaise))
+        for (row in data.expenses) payrollDao.saveExpense(ExpenseEntity(row.id, row.date, row.category, row.amountPaise, row.note))
     }
 
     // --- Payroll / expenses ------------------------------------------------

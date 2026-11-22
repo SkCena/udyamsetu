@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#16233D">
 <meta name="description" content="UdyamSetu — chhoti dukaan ke liye free offline GST billing. Setup + Invoice, bina internet, bina paywall.">
 <title>UdyamSetu — GST Billing</title>
 <link rel="manifest" href="manifest.json">
@@ -29,8 +29,13 @@ try {
 <script src="payroll.js" defer></script>
 <script src="reports.js" defer></script>
 <script src="i18n.js" defer></script>
+<script src="drive-config.js" defer></script>
+<script src="calculator.js" defer></script>
+<script src="guide.js" defer></script>
+<script src="drive.js" defer></script>
 <script src="app.js" defer></script>
 <script src="app12.js" defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <header class="app-header">
@@ -62,6 +67,8 @@ try {
   <button class="tab" data-tab="gst" type="button" data-i18n="tabGst">GST Report</button>
   <button class="tab" data-tab="payroll" type="button" data-i18n="tabPayroll">Salary</button>
   <button class="tab" data-tab="reports" type="button" data-i18n="tabReports">Reports</button>
+  <button class="tab" data-tab="calculator" type="button" data-i18n="tabCalculator">Calculator</button>
+  <button class="tab" data-tab="guide" type="button" data-i18n="tabGuide">GST Guide</button>
   <button class="tab" data-tab="about" type="button" data-i18n="tabAbout">About</button>
 </nav>
 
@@ -100,7 +107,7 @@ try {
         <button class="btn btn-primary" type="submit" data-i18n="ftuSave">Save</button>
       </form>
     </div>
-    <div id="firstBillGuide" class="guide-card" hidden>
+    <div id="firstBillGuide" class="guide-card" data-goto="billing" role="button" tabindex="0" hidden>
       <h3 data-i18n="firstBillTitle">First bill — 3 steps</h3>
       <p class="guide-step" data-i18n="guideStep1">1. Fill the shop name in Setup</p>
       <p class="guide-step" data-i18n="guideStep2">2. Choose a party or add a new one</p>
@@ -196,6 +203,15 @@ try {
         <span data-i18n="buyerState">Graahak ka rajya / State (buyer)</span>
         <select id="buyerState"></select>
       </label>
+      <label class="field">
+        <span data-i18n="docTypeLabel">Document type</span>
+        <select id="docType">
+          <option value="invoice" data-i18n="docInvoice">GST Bill</option>
+          <option value="non-gst" data-i18n="docNonGst">Non-GST Bill</option>
+          <option value="estimate" data-i18n="docEstimate">Estimate / Quotation</option>
+          <option value="receipt" data-i18n="docReceipt">Receipt</option>
+        </select>
+      </label>
       <p class="tax-kind"><span data-i18n="taxKind">Tax:</span> <strong id="taxKindLabel">CGST + SGST</strong></p>
 
       <h3 data-i18n="linesTitle">Samaan — Items</h3>
@@ -236,6 +252,10 @@ try {
       <button id="printA4Btn" class="btn btn-primary" type="button" data-i18n="printA4">Print — A4</button>
       <button id="printThermalBtn" class="btn" type="button" data-i18n="printThermal">Print — 80mm</button>
       <a id="waShareBtn" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" data-i18n="whatsapp">WhatsApp par bhejein</a>
+    </div>
+    <div class="btn-row wrap">
+      <button id="exportDocBtn" class="btn" type="button" data-i18n="exportDoc">Download DOC</button>
+      <button id="exportJsonBtn" class="btn" type="button" data-i18n="exportJson">Download JSON</button>
     </div>
     <div class="btn-row wrap">
       <button id="creditNoteBtn" class="btn btn-ghost" type="button" data-i18n="creditNote">Credit Note banayein</button>
@@ -465,12 +485,67 @@ try {
       <button id="expTallyCsv" class="btn" type="button">Tally CSV (BETA)</button>
       <button id="expBundle" class="btn" type="button">Full Backup JSON</button>
     </div>
+    <h3 data-i18n="driveTitle">Drive Backup (optional)</h3>
+    <div id="driveSection">
+      <p class="hint" data-i18n="driveHint">Encrypted backup in your own Google Drive. Login is optional — everything works without it.</p>
+      <p id="driveStatus" class="msg" role="status"></p>
+      <label class="field">
+        <span data-i18n="drivePassphrase">Backup passphrase</span>
+        <input id="drivePassphrase" type="password" autocomplete="off" placeholder="••••••••">
+      </label>
+      <p class="hint" data-i18n="drivePassphraseHint">The same passphrase is needed to restore. It is never saved anywhere.</p>
+      <div class="btn-row wrap">
+        <button id="driveSignInBtn" class="btn btn-primary" type="button" data-i18n="driveSignIn">Sign in with Google</button>
+        <button id="driveSignOutBtn" class="btn" type="button" data-i18n="driveSignOut" hidden>Sign out</button>
+        <button id="driveBackupBtn" class="btn btn-primary" type="button" data-i18n="driveBackupNow" hidden>Backup now</button>
+        <button id="driveRestoreBtn" class="btn" type="button" data-i18n="driveRestore" hidden>Restore</button>
+      </div>
+      <div id="driveFileList" class="invoice-list" hidden></div>
+      <p id="driveMsg" class="msg" role="status"></p>
+    </div>
+  </section>
+
+  <!-- ============ CALCULATOR ============ -->
+  <section id="tab-calculator" class="view" hidden>
+    <h2 data-i18n="calcTitle">GST Calculator</h2>
+    <p class="hint" data-i18n="calcHint">Enter an amount and a GST rate — the calculator shows GST and total. No data is saved.</p>
+    <label class="field">
+      <span data-i18n="calcAmount">Amount ₹</span>
+      <input id="calcAmount" type="text" inputmode="decimal" placeholder="1000.00">
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span data-i18n="calcRate">GST rate</span>
+        <select id="calcRate"></select>
+      </label>
+      <label class="field">
+        <span data-i18n="calcMode">Calculation</span>
+        <select id="calcMode">
+          <option value="exclusive" data-i18n="calcExclusive">Add GST (amount without GST)</option>
+          <option value="inclusive" data-i18n="calcInclusive">Remove GST (amount includes GST)</option>
+        </select>
+      </label>
+    </div>
+    <div class="totals" aria-live="polite">
+      <div class="trow"><span data-i18n="calcTaxable">Amount without GST</span><strong id="calcTaxableOut">—</strong></div>
+      <div class="trow"><span data-i18n="calcGst">GST</span><strong id="calcGstOut">—</strong></div>
+      <div class="trow grand"><span data-i18n="calcTotal">Total</span><strong id="calcTotalOut">—</strong></div>
+    </div>
+    <p id="calcMsg" class="msg" role="status"></p>
+  </section>
+
+  <!-- ============ GST GUIDE ============ -->
+  <section id="tab-guide" class="view" hidden>
+    <h2 data-i18n="guideTitle">GST Guide — Simple Knowledge</h2>
+    <p class="hint" data-i18n="guideHint">Short, simple facts. For filing and due dates, always check the GST portal.</p>
+    <div id="guideList"></div>
   </section>
 
   <!-- ============ ABOUT ============ -->
   <section id="tab-about" class="view" hidden>
     <h2 data-i18n="aboutTitle">About — UdyamSetu</h2>
     <p data-i18n="aboutText">UdyamSetu is free GST billing for small shops — no paywall, no ads, your data stays on your phone.</p>
+    <p><strong data-i18n="credit">Made by Sk Akram</strong></p>
     <div class="btn-row wrap">
       <a class="btn" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
       <a class="btn" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
@@ -481,6 +556,7 @@ try {
 
 <footer class="app-footer">
   <p data-i18n="footer">UdyamSetu — free, offline, aapka data aapke phone par hi rehta hai.</p>
+  <p data-i18n="credit">Made by Sk Akram</p>
   <p><a class="github-link footer-link" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a> · <a class="footer-link" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a></p>
 </footer>
 

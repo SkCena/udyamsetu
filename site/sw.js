@@ -2,7 +2,7 @@
 // No network calls are made by the app itself; the cache only holds local files.
 'use strict';
 
-const CACHE = 'udyamsetu-site-v5'; // bumped: gst-core.js now lives in site/ (Pages serves only site/), themes
+const CACHE = 'udyamsetu-site-v6'; // bumped: navy+gold theme, calculator/guide/drive modules
 const ASSETS = [
   './',
   './index.html',
@@ -18,6 +18,10 @@ const ASSETS = [
   './payroll.js',
   './reports.js',
   './i18n.js',
+  './drive-config.js',
+  './calculator.js',
+  './guide.js',
+  './drive.js',
   './manifest.json',
   './icon.svg',
   './gst-core.js',

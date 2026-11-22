@@ -45,7 +45,8 @@ vm.createContext(sandbox);
 const files = [
   'site/gst-core.js', 'site/store.js', 'site/invoice.js', 'site/party.js',
   'site/inventory.js', 'site/gst-reports.js', 'site/einvoice.js',
-  'site/payroll.js', 'site/reports.js', 'site/i18n.js', 'site/app.js', 'site/app12.js',
+  'site/payroll.js', 'site/reports.js', 'site/i18n.js', 'site/drive-config.js',
+  'site/calculator.js', 'site/guide.js', 'site/drive.js', 'site/app.js', 'site/app12.js',
 ];
 for (const f of files) {
   const code = fs.readFileSync(path.join(base, f), 'utf8');
@@ -60,6 +61,10 @@ for (const f of files) {
 // Check the ui12 hook + globals exist.
 console.log('ui12 hook:', typeof sandbox.window.UdyamSetu.ui12.onShow, typeof sandbox.window.UdyamSetu.ui12.onInvoiceSaved);
 console.log('modules:', Object.keys(sandbox.window.UdyamSetu).join(','));
+console.log('calculator module:', typeof sandbox.window.UdyamSetu.calculator.calcExclusive,
+  '| guide sections:', sandbox.window.UdyamSetu.guide.GUIDE_SECTIONS.length,
+  '| drive config:', sandbox.window.UdyamSetuDriveConfig.clientId === '',
+  '| drive status:', sandbox.window.UdyamSetu.drive.driveConfigStatus(sandbox.window.UdyamSetuDriveConfig));
 // Language LOCK: default English, switch to Hindi works via i18n module.
 const i18n = sandbox.window.UdyamSetu.i18n;
 console.log('i18n default lang:', i18n.getLang(), '| langs:', i18n.SUPPORTED_LANGS.length);

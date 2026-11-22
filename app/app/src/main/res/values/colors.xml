@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="teal_700">#0F766E</color>
-    <color name="teal_100">#CCFBF1</color>
+    <color name="navy_900">#16233D</color>
+    <color name="navy_800">#1B2A4A</color>
+    <color name="navy_100">#E8EDF5</color>
+    <color name="gold">#C9A227</color>
+    <color name="gold_light">#D4AF37</color>
 </resources>

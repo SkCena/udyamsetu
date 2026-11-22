@@ -77,8 +77,5 @@ fun PayrollScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         }
-        if (employees.isEmpty()) {
-            item { EmptyGuide(stringResource(R.string.hint_payroll), "+ Add employee") {} }
-        }
     }
 }

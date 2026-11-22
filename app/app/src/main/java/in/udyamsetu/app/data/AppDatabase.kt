@@ -94,6 +94,10 @@ interface InvoiceDao {
 
     @Query("SELECT * FROM invoices WHERE status = 'saved' ORDER BY date, number")
     suspend fun saved(): List<InvoiceEntity>
+
+    /** All invoices, any status — used by the Drive backup snapshot. */
+    @Query("SELECT * FROM invoices ORDER BY date, number")
+    suspend fun all(): List<InvoiceEntity>
 }
 
 @Dao
@@ -104,11 +108,19 @@ interface PayrollDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveEmployee(e: EmployeeEntity)
 
+    /** All employees — used by the Drive backup snapshot. */
+    @Query("SELECT * FROM employees ORDER BY name")
+    suspend fun allEmployees(): List<EmployeeEntity>
+
     @Query("SELECT * FROM attendance WHERE employeeId = :employeeId AND month = :month")
     suspend fun attendance(employeeId: String, month: String): AttendanceEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveAttendance(a: AttendanceEntity)
+
+    /** All attendance rows — used by the Drive backup snapshot. */
+    @Query("SELECT * FROM attendance")
+    suspend fun allAttendance(): List<AttendanceEntity>
 
     @Query("SELECT * FROM advances WHERE employeeId = :employeeId AND month = :month")
     suspend fun advances(employeeId: String, month: String): List<AdvanceEntity>
@@ -116,11 +128,19 @@ interface PayrollDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveAdvance(a: AdvanceEntity)
 
+    /** All advances — used by the Drive backup snapshot. */
+    @Query("SELECT * FROM advances")
+    suspend fun allAdvances(): List<AdvanceEntity>
+
     @Query("SELECT * FROM expenses ORDER BY date DESC")
     fun observeExpenses(): Flow<List<ExpenseEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveExpense(e: ExpenseEntity)
+
+    /** All expenses — used by the Drive backup snapshot. */
+    @Query("SELECT * FROM expenses ORDER BY date DESC")
+    suspend fun allExpenses(): List<ExpenseEntity>
 }
 
 @Database(

@@ -2,10 +2,16 @@
 // so switching tabs never loses it (compose_tab_state_hoisting).
 // Flow: Party -> Items -> PREVIEW -> Save (3-tap bill target: the bill
 // starts in 3 taps from Home; preview is the mistake-catching step before
-// save). Totals always come from the shared core, never hand-computed.
+// save). Totals always come from the shared core, per document type
+// (logic/BillTypes.kt) — never hand-computed.
+// Document types: GST bill, non-GST bill, estimate/quotation, credit note,
+// debit note, receipt. A non-GST bill and a receipt carry zero tax; an
+// estimate is not a sale (no stock change, no GST filing); a credit note
+// negates, a debit note stays positive.
 package `in`.udyamsetu.app.ui
 
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,7 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import `in`.udyamsetu.app.R
-import `in`.udyamsetu.app.logic.billTotals
+import `in`.udyamsetu.app.logic.DOC_TYPES
+import `in`.udyamsetu.app.logic.billTotalsForType
+import `in`.udyamsetu.app.logic.shareTextForDoc
 import `in`.udyamsetu.app.logic.validateBillLine
 
 @Composable
@@ -39,22 +49,61 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
     val message by vm.billMessage.collectAsState()
     var showPreview by remember { mutableStateOf(false) }
     var savedNumber by remember { mutableStateOf("") }
+    var savedTotalPaise by remember { mutableStateOf<Long?>(null) }
+    var savedTypeLabel by remember { mutableStateOf("") }
+    var savedType by remember { mutableStateOf("invoice") }
+    var savedPartyName by remember { mutableStateOf("") }
 
     val lines = draft.lines.mapNotNull { it.toBillLine() }
     val intraState = profile?.let { draft.buyerState == it.sellerState } ?: true
-    val totals = runCatching { if (lines.isNotEmpty()) billTotals(lines, intraState) else null }.getOrNull()
+    val totals = runCatching { if (lines.isNotEmpty()) billTotalsForType(lines, intraState, draft.type) else null }.getOrNull()
     val lineErrors = draft.lines.flatMap { validateBillLine(it.toBillLine() ?: return@flatMap listOf("line")) }
+    val typeLabel = stringResource(docTypeLabelRes(draft.type))
+    val estimateNote = stringResource(R.string.doc_estimate_note)
+    val saveLabel = when (draft.type) {
+        "estimate" -> stringResource(R.string.save_estimate)
+        "receipt" -> stringResource(R.string.save_receipt)
+        "credit-note" -> stringResource(R.string.credit_note)
+        "debit-note" -> stringResource(R.string.debit_note)
+        else -> stringResource(R.string.save_invoice)
+    }
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            SectionTitle(stringResource(R.string.billing_title))
+            SectionTitle(if (draft.type == "invoice") stringResource(R.string.billing_title) else typeLabel)
             if ((profile?.name ?: "").isBlank()) {
                 HintText(stringResource(R.string.setup_warn))
+            }
+            SectionTitle(stringResource(R.string.doc_type_label))
+            for (type in DOC_TYPES) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { vm.updateDraft(draft.copy(type = type)) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = draft.type == type,
+                        onClick = { vm.updateDraft(draft.copy(type = type)) },
+                    )
+                    Text(
+                        text = stringResource(docTypeLabelRes(type)),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+            when (draft.type) {
+                "non-gst" -> HintText(stringResource(R.string.doc_non_gst_note))
+                "estimate" -> HintText(stringResource(R.string.doc_estimate_note))
+                "receipt" -> HintText(stringResource(R.string.doc_receipt_note))
             }
             LabeledField(stringResource(R.string.party_name), draft.partyName, { vm.updateDraft(draft.copy(partyName = it)) }, stringResource(R.string.party_name_ph))
             LabeledField(stringResource(R.string.party_gstin), draft.partyGstin, { vm.updateDraft(draft.copy(partyGstin = it.uppercase())) })
             LabeledField(stringResource(R.string.buyer_state), draft.buyerState, { vm.updateDraft(draft.copy(buyerState = it)) })
-            Text("${stringResource(R.string.tax_kind)} ${if (intraState) "CGST + SGST" else "IGST"}")
+            if (draft.type != "non-gst" && draft.type != "receipt") {
+                Text("${stringResource(R.string.tax_kind)} ${if (intraState) "CGST + SGST" else "IGST"}")
+            }
         }
         item { SectionTitle(stringResource(R.string.lines_title)) }
         draft.lines.forEachIndexed { index, line ->
@@ -89,10 +138,13 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
             }
             if (totals != null) {
                 Text("${stringResource(R.string.taxable)}: ${formatRupees(totals.taxablePaise)}")
-                if (intraState) {
-                    Text("CGST: ${formatRupees(totals.cgstPaise)}  SGST: ${formatRupees(totals.sgstPaise)}")
-                } else {
-                    Text("IGST: ${formatRupees(totals.igstPaise)}")
+                val taxTotal = totals.cgstPaise + totals.sgstPaise + totals.igstPaise
+                if (taxTotal != 0L) {
+                    if (intraState) {
+                        Text("CGST: ${formatRupees(totals.cgstPaise)}  SGST: ${formatRupees(totals.sgstPaise)}")
+                    } else {
+                        Text("IGST: ${formatRupees(totals.igstPaise)}")
+                    }
                 }
                 Text("${stringResource(R.string.round_off)}: ${formatRupees(totals.roundOffPaise)}")
                 Text(
@@ -110,7 +162,7 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
                         Text("Party: ${draft.partyName} (${stateName(draft.buyerState)})")
                         Text("Lines: ${lines.size} — ${stringResource(R.string.taxable)} ${formatRupees(totals.taxablePaise)}")
                         Text("${stringResource(R.string.grand_total)}: ${formatRupees(totals.roundedTotalPaise)}", fontWeight = FontWeight.Bold)
-                        Text("Type: ${draft.type}")
+                        Text("Type: $typeLabel")
                     }
                 }
             }
@@ -120,18 +172,39 @@ fun BillingScreen(vm: AppViewModel, nav: NavHostController) {
                 }
                 Button(
                     onClick = {
-                        vm.saveDraftBill { number -> savedNumber = number }
+                        // Capture the totals BEFORE save: saveDraftBill clears
+                        // the draft, so the share sheet below needs its own copy.
+                        val totalsNow = totals
+                        val labelNow = typeLabel
+                        val typeNow = draft.type
+                        val partyNow = draft.partyName
+                        vm.saveDraftBill { number ->
+                            savedNumber = number
+                            savedTotalPaise = totalsNow?.roundedTotalPaise
+                            savedTypeLabel = labelNow
+                            savedType = typeNow
+                            savedPartyName = partyNow
+                        }
                     },
                     enabled = lines.isNotEmpty() && lineErrors.isEmpty() && draft.partyName.isNotBlank(),
                     modifier = Modifier.weight(1f).padding(start = 4.dp),
-                ) { Text(stringResource(R.string.save_invoice)) }
+                ) { Text(saveLabel) }
             }
             if (savedNumber.isNotEmpty()) {
                 Text(stringResource(R.string.invoice_saved))
                 OutlinedButton(onClick = {
+                    val shareText = shareTextForDoc(
+                        typeLabel = savedTypeLabel,
+                        number = savedNumber,
+                        shopName = profile?.name ?: "",
+                        partyName = savedPartyName,
+                        totalPaise = savedTotalPaise ?: 0L,
+                        upiId = profile?.upiId ?: "",
+                        note = if (savedType == "estimate") estimateNote else "",
+                    )
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "Bill $savedNumber — Total ${totals?.let { formatRupees(it.roundedTotalPaise) } ?: ""}")
+                        putExtra(Intent.EXTRA_TEXT, shareText)
                     }
                     context.startActivity(Intent.createChooser(intent, "Share bill"))
                 }) { Text(stringResource(R.string.whatsapp)) }

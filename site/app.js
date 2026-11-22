@@ -23,6 +23,10 @@
     document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
     const sel = document.getElementById('langSelect');
     if (sel) sel.value = lang;
+    // Guide cards are rendered by guide.js — re-render them in the new language.
+    if (window.UdyamSetu && window.UdyamSetu.guide && window.UdyamSetu.guide.render) {
+      window.UdyamSetu.guide.render();
+    }
     renderLines();
     updateTaxKind();
   }
@@ -40,7 +44,7 @@
     document.documentElement.setAttribute('data-theme', next);
     try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode — theme still applies this session */ }
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', next === 'dark' ? '#0b2e2a' : '#0f766e');
+    if (meta) meta.setAttribute('content', next === 'dark' ? '#0F1B2E' : '#16233D');
   }
 
   // ---------------- helpers ----------------
@@ -57,7 +61,7 @@
   }
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === name));
-    ['home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'about'].forEach((n) => {
+    ['home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'guide', 'about'].forEach((n) => {
       $('tab-' + n).hidden = (n !== name);
     });
     if (name === 'home') renderHome();
@@ -167,6 +171,13 @@
     return profile && profile.sellerState === $('buyerState').value;
   }
 
+  // Billing form's document type (GST bill by default). A credit/debit note
+  // opened from the detail view overrides it via noteMode.
+  function currentDocType() {
+    const sel = $('docType');
+    return sel && invApi.isDocType(sel.value) ? sel.value : 'invoice';
+  }
+
   function updateTaxKind() {
     const intra = intraState();
     $('taxKindLabel').textContent = intra ? 'CGST + SGST' : 'IGST';
@@ -179,9 +190,11 @@
     updateTaxKind();
     let totals = null;
     try {
-      const lines = collectLines();
+      let lines = collectLines();
+      const type = noteMode ? noteMode.type : currentDocType();
+      lines = invApi.applyDocTypeToLines(lines, type);
       if (lines.length) totals = invApi.buildTotals(lines, intraState());
-      if (totals && noteMode && noteMode.type === 'credit-note') totals = invApi.negateTotals(totals);
+      if (totals && type === 'credit-note') totals = invApi.negateTotals(totals);
     } catch (e) { totals = null; }
     const set = (id, v) => { $(id).textContent = v === null ? '—' : formatINR(v); };
     if (!totals) {
@@ -209,6 +222,8 @@
   function resetBillingForm() {
     editingDraftId = null;
     noteMode = null;
+    const docSel = $('docType');
+    if (docSel) docSel.value = 'invoice';
     $('noteBanner').hidden = true;
     $('partyName').value = '';
     $('partyGstin').value = '';
@@ -251,7 +266,7 @@
     const draft = invApi.createInvoiceDraft({
       id: editingDraftId || undefined,
       profile,
-      type: noteMode ? noteMode.type : 'invoice',
+      type: noteMode ? noteMode.type : currentDocType(),
       linkedInvoiceNumber: noteMode ? noteMode.linked : null,
       partyName: data.partyName,
       partyGstin: data.partyGstin,
@@ -287,6 +302,9 @@
     if (inv.status === 'draft') return '<span class="badge draft">' + esc(t('draftBadge')) + '</span>';
     if (inv.type === 'credit-note') return '<span class="badge credit">' + esc(t('noteCredit')) + '</span>';
     if (inv.type === 'debit-note') return '<span class="badge debit">' + esc(t('noteDebit')) + '</span>';
+    if (inv.type === 'estimate') return '<span class="badge estimate">' + esc(t('docEstimate')) + '</span>';
+    if (inv.type === 'receipt') return '<span class="badge receipt">' + esc(t('docReceipt')) + '</span>';
+    if (inv.type === 'non-gst') return '<span class="badge nongst">' + esc(t('docNonGst')) + '</span>';
     return '';
   }
 
@@ -311,7 +329,10 @@
 
   function invoiceHtml(inv, prof) {
     const kind = inv.type === 'credit-note' ? t('noteCredit')
-      : inv.type === 'debit-note' ? t('noteDebit') : t('noteInvoice');
+      : inv.type === 'debit-note' ? t('noteDebit')
+      : inv.type === 'estimate' ? t('docEstimate')
+      : inv.type === 'receipt' ? t('docReceipt')
+      : inv.type === 'non-gst' ? t('docNonGst') : t('noteInvoice');
     const rows = inv.lines.map((l, i) => {
       const calc = { qty: l.qty, unitPricePaise: l.unitPricePaise, discountPct: l.discountPct || 0, taxRatePct: l.taxRatePct, intraState: inv.intraState };
       let lineTotal;
@@ -367,6 +388,15 @@
     $('creditNoteBtn').hidden = !isSaved;
     $('debitNoteBtn').hidden = !isSaved;
     showTab('detail');
+  }
+
+  function downloadFile(name, text, mime) {
+    const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function printInvoice(format) {
@@ -468,12 +498,21 @@
     // Theme: sync the browser chrome colour with the theme the <head>
     // script already applied, and wire the header toggle button.
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', currentTheme() === 'dark' ? '#0b2e2a' : '#0f766e');
+    if (themeMeta) themeMeta.setAttribute('content', currentTheme() === 'dark' ? '#0F1B2E' : '#16233D');
     const themeBtn = $('themeToggle');
     if (themeBtn) themeBtn.addEventListener('click', () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark'));
 
-    document.querySelectorAll('[data-goto]').forEach((b) =>
-      b.addEventListener('click', () => showTab(b.getAttribute('data-goto'))));
+    // Every [data-goto] element navigates on tap — including plain cards
+    // like the first-bill guide (a card that looks tappable must work).
+    // Non-button cards also answer Enter / Space on a keyboard.
+    document.querySelectorAll('[data-goto]').forEach((b) => {
+      b.addEventListener('click', () => showTab(b.getAttribute('data-goto')));
+      if (b.tagName !== 'BUTTON' && b.tagName !== 'A') {
+        b.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showTab(b.getAttribute('data-goto')); }
+        });
+      }
+    });
     $('langContinueBtn').addEventListener('click', () => {
       i18nMod.markLangChosen();
       $('langPrompt').hidden = true;
@@ -533,12 +572,23 @@
     });
 
     $('buyerState').addEventListener('change', updateTotals);
+    $('docType').addEventListener('change', updateTotals);
     $('addLine').addEventListener('click', () => { currentLines.push(blankLine()); renderLines(); });
     $('billingForm').addEventListener('submit', (e) => { e.preventDefault(); saveBilling(true); });
     $('saveDraftBtn').addEventListener('click', () => saveBilling(false));
     $('clearFormBtn').addEventListener('click', resetBillingForm);
 
     $('backToList').addEventListener('click', () => showTab('list'));
+    $('exportDocBtn').addEventListener('click', () => {
+      if (!currentInvoice) return;
+      downloadFile(invApi.docFileName(currentInvoice, 'doc'),
+        invApi.invoiceToDocHtml(currentInvoice, profile), 'application/msword');
+    });
+    $('exportJsonBtn').addEventListener('click', () => {
+      if (!currentInvoice) return;
+      downloadFile(invApi.docFileName(currentInvoice, 'json'),
+        invApi.invoiceToExportJson(currentInvoice, profile), 'application/json');
+    });
     $('printA4Btn').addEventListener('click', () => printInvoice('a4'));
     $('printThermalBtn').addEventListener('click', () => printInvoice('thermal'));
     $('creditNoteBtn').addEventListener('click', async () => {

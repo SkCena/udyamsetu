@@ -11,8 +11,10 @@ package `in`.udyamsetu.app.logic
 data class Summary(val count: Int, val taxablePaise: Long, val totalPaise: Long)
 
 fun salesSummary(invoices: List<SavedInvoice>, from: String? = null, to: String? = null): Summary {
+    // Real sales only: a GST bill and a non-GST bill are both sales.
+    // Estimates, receipts and notes never count as sales here.
     val list = invoices.filter {
-        it.status == "saved" && it.type == "invoice" &&
+        it.status == "saved" && (it.type == "invoice" || it.type == "non-gst") &&
             (from == null || it.date >= from) && (to == null || it.date <= to)
     }
     return Summary(list.size, list.sumOf { it.taxablePaise }, list.sumOf { it.roundedTotalPaise })

@@ -111,6 +111,12 @@
         '<span class="inv-sub">' + (d.daysDue !== null ? d.daysDue + ' din se baki' : 'Opening balance') + '</span>' +
         '<div class="btn-row"><a class="btn btn-whatsapp" href="https://wa.me/?text=' +
         encodeURIComponent(text) + '" target="_blank" rel="noopener">WhatsApp Reminder</a></div>';
+      // The whole row opens the party (tap anywhere except the WhatsApp link).
+      row.setAttribute('role', 'button');
+      row.tabIndex = 0;
+      const openParty = (e) => { if (e.target && e.target.closest && e.target.closest('a')) return; selectParty(d.party.id); };
+      row.addEventListener('click', openParty);
+      row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectParty(d.party.id); } });
       dueWrap.appendChild(row);
     });
   }
@@ -211,13 +217,23 @@
     items.forEach((it) => {
       const qty = invtApi.stockQty(it.id, movements);
       const low = qty < it.reorderLevel;
-      const b = document.createElement('div');
+      // A real button, not a look-alike div: tap picks this item in the
+      // movement / batch forms below, so the row always does something.
+      const b = document.createElement('button');
+      b.type = 'button';
       b.className = 'inv-item';
       b.innerHTML = '<span class="inv-top"><span>' + esc(it.name) +
         (low ? ' <span class="badge credit">LOW STOCK</span>' : '') + '</span>' +
         '<span>' + qty + ' ' + esc(it.unit) + '</span></span>' +
         '<span class="inv-sub">HSN ' + esc(it.hsn) + ' · GST ' + it.gstRatePct + '% · Sale ₹' +
         (it.salePricePaise / 100).toFixed(2) + ' · Godown ' + esc(it.godown || 'Main') + '</span>';
+      b.addEventListener('click', () => {
+        const mSel = $('mItem'), bSel = $('bItem');
+        if (mSel) mSel.value = it.id;
+        if (bSel) bSel.value = it.id;
+        const form = $('moveForm');
+        if (form && form.scrollIntoView) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       wrap.appendChild(b);
     });
     const lowItems = invtApi.lowStock(items, movements);

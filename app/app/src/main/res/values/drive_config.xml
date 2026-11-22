@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Drive backup setup (OPTIONAL — the app works fully without it).
+         1. In Google Cloud Console, create an OAuth 2.0 client ID of type
+            "Android" for package in.udyamsetu.app (add the release + debug
+            SHA-1 fingerprints), and enable the Google Drive API.
+         2. Paste the client ID below (it looks like
+            123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com).
+         3. Until this value is filled, the Backup screen shows
+            "Setup pending" and nothing else changes.
+         The client ID is a public identifier, not a secret — but it still
+         belongs here, not in code, so a future setup change is one edit. -->
+    <string name="drive_oauth_client_id" translatable="false"></string>
+</resources>

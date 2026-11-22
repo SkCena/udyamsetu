@@ -48,7 +48,10 @@ fun HomeScreen(vm: AppViewModel, nav: NavHostController) {
         runCatching {
             val invoices = vm.repo.savedInvoices()
             val today = vm.repo.todayIso()
-            todaySales = invoices.filter { it.date == today }.sumOf { it.roundedTotalPaise }
+            // Today's sale = real sales only (GST + non-GST bills, notes
+            // signed); estimates and receipts are not sales.
+            val salesTypes = setOf("invoice", "non-gst", "credit-note", "debit-note")
+            todaySales = invoices.filter { it.date == today && it.type in salesTypes }.sumOf { it.roundedTotalPaise }
             billCount = invoices.size
             val parties = vm.repo.allPartyRows()
             val entries = vm.repo.allLedgerRows()
@@ -81,6 +84,14 @@ fun HomeScreen(vm: AppViewModel, nav: NavHostController) {
                     Text(stringResource(R.string.quick_payment))
                 }
             }
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { nav.navigate(Routes.CALCULATOR) }, modifier = Modifier.weight(1f).padding(4.dp)) {
+                    Text(stringResource(R.string.tab_calculator))
+                }
+                Button(onClick = { nav.navigate(Routes.GUIDE) }, modifier = Modifier.weight(1f).padding(4.dp)) {
+                    Text(stringResource(R.string.tab_guide))
+                }
+            }
         }
         item {
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
@@ -110,16 +121,27 @@ fun HomeScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
         // First-bill guide — shown until the first bill is saved.
+        // The WHOLE card is tappable (device test: tapping the card did
+        // nothing before — only the small Setup button worked). Tap starts
+        // the guided first bill: Setup first when the shop name is missing,
+        // otherwise straight into New Bill.
         if (billCount == 0) {
             item {
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                val startFirstBill = {
+                    if ((profile?.name ?: "").isBlank()) nav.navigate(Routes.SETUP)
+                    else nav.navigate(Routes.BILLING)
+                }
+                Card(
+                    onClick = startFirstBill,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(stringResource(R.string.first_bill_title), fontWeight = FontWeight.Bold)
                         Text(stringResource(R.string.guide_step1))
                         Text(stringResource(R.string.guide_step2))
                         Text(stringResource(R.string.guide_step3))
-                        Button(onClick = { nav.navigate(Routes.SETUP) }) {
-                            Text(stringResource(R.string.tab_setup))
+                        Button(onClick = startFirstBill) {
+                            Text(stringResource(R.string.first_bill_start))
                         }
                     }
                 }

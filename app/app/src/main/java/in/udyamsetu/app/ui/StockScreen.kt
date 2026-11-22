@@ -87,8 +87,5 @@ fun StockScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         }
-        if (items.isEmpty()) {
-            item { EmptyGuide(stringResource(R.string.hint_stock), "+ Add item") {} }
-        }
     }
 }

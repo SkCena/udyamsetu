@@ -6,6 +6,7 @@
 package `in`.udyamsetu.app.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -51,6 +52,9 @@ object Routes {
     const val REPORTS = "reports"
     const val MORE = "more"
     const val ABOUT = "about"
+    const val CALCULATOR = "calculator"
+    const val GUIDE = "guide"
+    const val BACKUP = "backup"
 }
 
 fun applyLocale(context: Context, lang: String): Context {
@@ -63,6 +67,19 @@ fun applyLocale(context: Context, lang: String): Context {
 
 class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
+    // The NavHostController, so a widget tap (onNewIntent) can navigate
+    // even when the app is already open. The home widget sends
+    // "udyamsetu.route" = "billing" — before this, the extra was ignored
+    // and the widget just opened Home.
+    private var navRef: NavHostController? = null
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getStringExtra("udyamsetu.route") == "billing") {
+            navRef?.navigate(Routes.BILLING)
+        }
+    }
 
     override fun attachBaseContext(newBase: Context) {
         // Language lives in plain SharedPreferences (written by
@@ -90,7 +107,15 @@ class MainActivity : ComponentActivity() {
             UdyamSetuTheme(darkTheme = darkTheme) {
                 val langChosen by vm.langChosen.collectAsState()
                 val nav = rememberNavController()
-                val start = if (langChosen) Routes.HOME else Routes.LANGUAGE
+                navRef = nav
+                // Widget deep-link: the home widget opens straight into New
+                // Bill (see onNewIntent for the already-open case).
+                val widgetRoute = intent.getStringExtra("udyamsetu.route")
+                val start = when {
+                    widgetRoute == "billing" -> Routes.BILLING
+                    langChosen -> Routes.HOME
+                    else -> Routes.LANGUAGE
+                }
                 Scaffold(
                     bottomBar = { BottomNav(nav) },
                 ) { inner ->
@@ -111,6 +136,9 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.REPORTS) { ReportsScreen(vm, nav) }
                         composable(Routes.MORE) { MoreScreen(vm, nav) }
                         composable(Routes.ABOUT) { AboutScreen(vm, nav) }
+                        composable(Routes.CALCULATOR) { CalculatorScreen(vm, nav) }
+                        composable(Routes.GUIDE) { GuideScreen(vm, nav) }
+                        composable(Routes.BACKUP) { BackupScreen(vm, nav) }
                     }
                 }
             }

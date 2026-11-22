@@ -15,7 +15,11 @@ data class SavedInvoice(
     val partyGstin: String?,
     val buyerState: String,
     val intraState: Boolean,
-    val type: String, // invoice | credit-note | debit-note
+    /** invoice | credit-note | debit-note | non-gst | estimate | receipt.
+     *  Only invoice + notes enter GST returns; non-gst is a real sale with
+     *  zero tax (sales reports only); estimate / receipt never enter any
+     *  report (see gstr1Summary / salesSummary filters). */
+    val type: String,
     val status: String, // saved | draft
     val fy: String,
     val lines: List<BillLine>,
@@ -73,6 +77,9 @@ fun gstr1Summary(invoices: List<SavedInvoice>, fy: String? = null, month: String
     var totals = TaxHeads()
     var count = 0
     for (inv in saved) {
+        // Estimates and receipts are not sales; non-GST bills carry no GST
+        // — none of them belongs in a GST return, not even in the totals.
+        if (inv.type == "estimate" || inv.type == "receipt" || inv.type == "non-gst") continue
         totals += headsOf(inv)
         if (inv.type == "credit-note" || inv.type == "debit-note") {
             cdnr += CdnrRow(
@@ -161,7 +168,9 @@ data class ReconcileResult(
 )
 
 fun reconcile2A2B(own: List<SavedInvoice>, portal: List<PortalRow>): ReconcileResult {
-    val ownByNumber = own.filter { it.status == "saved" }.associateBy { it.number }
+    // Only GST documents ever appear on the portal — an estimate, a
+    // receipt or a non-GST bill can never match a portal row.
+    val ownByNumber = own.filter { it.status == "saved" && isGstDoc(it.type) }.associateBy { it.number }
     val portalByNumber = portal.associateBy { it.number }
     val matched = mutableListOf<String>()
     val missing = mutableListOf<String>()

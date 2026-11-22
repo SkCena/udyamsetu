@@ -67,9 +67,6 @@ fun PartyScreen(vm: AppViewModel, nav: NavHostController) {
                 entryKind = entryKind, onKind = { entryKind = it },
             )
         }
-        if (parties.isEmpty()) {
-            item { EmptyGuide(stringResource(R.string.hint_party), "+ Add party") {} }
-        }
     }
 }
 

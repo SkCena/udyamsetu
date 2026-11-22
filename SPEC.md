@@ -88,7 +88,7 @@ fully, the field labels are the next i18n step.
 ## Commands
 
 ```bash
-# Site tests — 607 tests, all green
+# Site tests — 734 tests, all green
 node core/gst.test.js            # 114
 node site/app.test.js            # 78
 node site/party-inventory.test.js # 87
@@ -96,9 +96,12 @@ node site/gst-einvoice.test.js   # 103
 node site/payroll-reports.test.js # 82
 node site/integration.test.js    # 53
 node site/i18n.test.js           # 33
-node site/views.test.js          # 57 — mobile/desktop views, Home, FTU,
+node site/views.test.js          # 83 — mobile/desktop views, Home, FTU,
                                  # language prompt, APK markers, GitHub links,
-                                 # gst-core sync + Light/Dark theme
+                                 # gst-core sync + Light/Dark theme,
+                                 # calculator/guide tabs, dead-button checks
+node site/improvements.test.js   # 101 — bill types, calculator, guide,
+                                 # drive backup config, navy+gold theme
 
 # Browser load smoke — all 12 scripts load in order, handlers run,
 # all 5 Phase 1.2 tabs render
@@ -111,7 +114,7 @@ node tools/sync-site-core.js
 kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar
 java -jar /tmp/gst-test.jar   # 111 tests
 
-# App logic tests (JDK 17 + kotlinc, no Android SDK needed) — 32 tests
+# App logic tests (JDK 17 + kotlinc, no Android SDK needed) — 74 tests
 kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt \
   app/app/src/main/java/in/udyamsetu/app/logic/*.kt \
   app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt \
@@ -252,7 +255,7 @@ docs/                -> Device test cards + notes
   only; add it through the GitHub website the first time — the API
   can't push workflow files). The Gradle project lives in `app/`, so
   CI runs with `working-directory: app`.
-- Host tests green: app logic 32/32, GST core 111/111, Site 598/598,
+- Host tests green: app logic 74/74, GST core 111/111, Site 734/734,
   smoke PASS; all XML parses fine; all string/layout references
   resolve.
 - Still open: the APK hasn't built in CI yet (the workflow isn't in
@@ -277,7 +280,7 @@ docs/                -> Device test cards + notes
   "APK chahiye" badge + APK download link (GitHub Releases, no fake
   `.apk` URL).
 - GitHub link everywhere: header, footer, Home card, About.
-- 607 node tests green; browser load smoke green; 16/16 files HTTP 200.
+- 734 node tests green; browser load smoke green; 16/16 files HTTP 200.
 - Still open: look at it on a real phone (360px) and a real desktop
   (1280px) — the visual check is in the device test card.
 
@@ -459,6 +462,19 @@ Nothing here is dropped — it's just later, and each row says why.
 
 **Out of scope (not deferred, never):** no paywall / "Pro" tier; no
 ads; user data never goes to a central server.
+
+## Improvement round (2026-11-22 — premium look, bill types, calculator, guide, Drive backup)
+
+- **Premium look, no green:** deep navy (`#16233D` / `#1B2A4A`) + gold (`#C9A227` / `#D4AF37`) everywhere, Site + App. The old teal/green brand is gone, including the app launcher icon (new vector: gold bridge arc + ledger line on navy). The Site keeps its layout — a full Site redesign waits for the user's own plan.
+- **Credit:** "Made by Sk Akram" in the Site footer + About and the App About screen.
+- **i18n rule:** every language reads professional and simple, in that language; technical words (GST, Bill, Invoice, UPI, HSN) stay in English. App strings come from `site/i18n.js` through `tools/gen-android-strings.py` (186 keys × 10 languages, regen is byte-identical).
+- **Bill types:** GST bill, non-GST bill, estimate/quotation, credit note, debit note, receipt — Site + App. Number series: `INV/...`, `EST/...`, `RCT/...`. Non-GST + receipt force tax to 0. **Sign rule (fixed this round): only a credit note negates; a debit note stays positive** — the App used to negate both, the Site only ever negated credit notes, so the App now matches the Site (and the GSTR-1 CDNR rule).
+- **Exports:** Site invoice detail has Download DOC (Word-compatible HTML) + Download JSON next to print/PDF and WhatsApp share.
+- **Calculator tab/screen:** GST calculator, Site + App — amount + rate (0/5/12/18/28) → GST + total, exclusive (add GST) and inclusive (split GST out) modes, integer-paise math.
+- **GST Guide tab/screen:** 6 sections (what GST is, slabs, GSTR-1/3B, e-invoice/e-way, GSTR-9, common mistakes). Only verified facts; due dates and turnover limits say "check the GST portal" instead of stating numbers that change.
+- **Drive backup (setup pending):** Google sign-in (optional — everything works without it) + AES-GCM encrypted backup into the user's own Drive appDataFolder, Site (GIS + Drive API, `site/drive-config.js`) + App (Google Sign-In + Drive API, `res/values/drive_config.xml`). Both configs are **empty placeholders** — no secret in the repo. Fill in a Google Cloud OAuth client id to enable it; until then the backup UI shows "Setup pending". Firebase sync is a later step, not this round.
+- **Device verdict fix (first APK, user tested on phone):** the "First bill — 3 steps" card did nothing on tap. Site: the whole guide card is now tappable (tap/keyboard → New Bill). App: the card is a tappable `Card` with a "Start first bill" button (→ Setup if the shop name is blank, else New Bill). Dead-button audit, Site + App: stock rows, party due rows, empty-guide buttons with empty actions, Reports "Share summary" placeholder text, widget deep-link — all fixed/wired.
+- **Tests after this round:** Site 734, GST Kotlin 111, App logic 74 — all green, smoke PASS. App Compose compile is decided by CI (local Gradle is blocked).
 
 ## Risks and lessons
 

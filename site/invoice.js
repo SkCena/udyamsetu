@@ -53,6 +53,34 @@ const STATES = [
   { code: '37', name: 'Andhra Pradesh' },
 ];
 
+/** Document types the billing flow supports. 'invoice' is the GST bill.
+ *  'non-gst' and 'receipt' carry no tax; 'estimate' is a quotation (tax
+ *  shown as entered, never a tax invoice); credit/debit notes link to a
+ *  saved bill (see makeNoteDraft). */
+const DOC_TYPES = ['invoice', 'non-gst', 'estimate', 'receipt', 'credit-note', 'debit-note'];
+const DOC_TYPE_LABELS = {
+  'invoice': 'GST Bill',
+  'non-gst': 'Non-GST Bill',
+  'estimate': 'Estimate / Quotation',
+  'receipt': 'Receipt',
+  'credit-note': 'Credit Note',
+  'debit-note': 'Debit Note',
+};
+const DOC_TYPE_PREFIX = { 'estimate': 'EST', 'receipt': 'RCT' };
+function docTypeLabel(type) {
+  return DOC_TYPE_LABELS[type] || DOC_TYPE_LABELS['invoice'];
+}
+function isDocType(type) { return DOC_TYPES.includes(type); }
+/** non-gst + receipt carry no tax; the rest keep the rates as entered. */
+function isTaxableDocType(type) {
+  return type !== 'non-gst' && type !== 'receipt';
+}
+/** Zero the tax rate on every line for non-taxable doc types. Pure. */
+function applyDocTypeToLines(lines, type) {
+  if (isTaxableDocType(type)) return lines.map((l) => Object.assign({}, l));
+  return lines.map((l) => Object.assign({}, l, { taxRatePct: 0 }));
+}
+
 function stateName(code) {
   const s = STATES.find((x) => x.code === code);
   return s ? s.name : code;
@@ -171,26 +199,29 @@ function todayISO(date) {
 /**
  * Build an unsaved invoice (status 'draft', number null).
  * Does NOT consume the invoice series — numbering happens in finalizeInvoice.
- * type: 'invoice' | 'credit-note' | 'debit-note'.
+ * type: 'invoice' | 'non-gst' | 'estimate' | 'receipt' | 'credit-note' | 'debit-note'.
  * A credit note's totals are the negation of its lines' totals.
+ * Non-GST bills and receipts carry no tax (line rates forced to 0).
  */
 function createInvoiceDraft(opts) {
   const date = opts.date instanceof Date ? opts.date : new Date(opts.date || Date.now());
+  const type = isDocType(opts.type) ? opts.type : 'invoice';
   const intraState = isIntraState(opts.profile.sellerState, opts.buyerState);
-  let totals = buildTotals(opts.lines, intraState);
-  if (opts.type === 'credit-note') totals = negateTotals(totals);
+  const lines = applyDocTypeToLines(opts.lines, type);
+  let totals = buildTotals(lines, intraState);
+  if (type === 'credit-note') totals = negateTotals(totals);
   return {
     id: opts.id || newId(),
     number: null,
     fy: null,
     date: todayISO(date),
-    type: opts.type || 'invoice',
+    type,
     linkedInvoiceNumber: opts.linkedInvoiceNumber || null,
     partyName: opts.partyName,
     partyGstin: opts.partyGstin || null,
     buyerState: opts.buyerState,
     intraState,
-    lines: opts.lines.map((l) => ({
+    lines: lines.map((l) => ({
       name: l.name,
       hsn: String(l.hsn),
       qty: l.qty,
@@ -207,11 +238,13 @@ function createInvoiceDraft(opts) {
  * Assign the next series number to a draft and bump the profile sequence.
  * Pure: returns new objects, does not mutate its inputs.
  * seq increments ONLY here — never on draft creation.
+ * Estimates use the EST series and receipts the RCT series (same counter).
  */
 function finalizeInvoice(draft, profile, date) {
   const d = date instanceof Date ? date : new Date(date || draft.date);
   const fy = gstCore.financialYear(d);
-  const number = gstCore.invoiceNumber(profile.invoicePrefix, fy, profile.nextSeq);
+  const prefix = DOC_TYPE_PREFIX[draft.type] || profile.invoicePrefix;
+  const number = gstCore.invoiceNumber(prefix, fy, profile.nextSeq);
   const invoice = Object.assign({}, draft, { number, fy, date: todayISO(d), status: 'saved' });
   const nextProfile = Object.assign({}, profile, { nextSeq: profile.nextSeq + 1 });
   return { invoice, profile: nextProfile };
@@ -239,8 +272,7 @@ function makeNoteDraft(original, type, profile) {
 
 /** Plain-text invoice summary for the WhatsApp share link. */
 function whatsappText(invoice, profile) {
-  const kind = invoice.type === 'credit-note' ? 'Credit Note'
-    : invoice.type === 'debit-note' ? 'Debit Note' : 'Invoice';
+  const kind = docTypeLabel(invoice.type);
   const out = [
     kind + ' ' + (invoice.number || '(draft)') + ' — ' + (profile.name || ''),
     'Date: ' + invoice.date,
@@ -257,11 +289,70 @@ function whatsappUrl(invoice, profile) {
   return 'https://wa.me/?text=' + encodeURIComponent(whatsappText(invoice, profile));
 }
 
+/** Safe file name for an exported document, e.g. 'INV-2026-27-0001.doc'. */
+function docFileName(invoice, ext) {
+  const base = String(invoice.number || ('draft-' + invoice.id)).replace(/[^A-Za-z0-9._-]+/g, '-');
+  return base + '.' + ext;
+}
+
+/** Escape text for the .doc (HTML) export. */
+function escDoc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Word-compatible .doc export: plain HTML in a .doc file — Word / LibreOffice
+ * open it directly. Pure: same numbers as the on-screen preview.
+ */
+function invoiceToDocHtml(invoice, profile) {
+  const prof = profile || {};
+  const kind = docTypeLabel(invoice.type);
+  const rows = invoice.lines.map((l, i) =>
+    '<tr><td>' + (i + 1) + '</td><td>' + escDoc(l.name) + '</td><td>' + escDoc(l.hsn) +
+    '</td><td>' + l.qty + '</td><td>' + escDoc(gstCore.formatINR(l.unitPricePaise)) +
+    '</td><td>' + l.taxRatePct + '%</td></tr>').join('');
+  const tot = invoice.totals;
+  const taxRows = invoice.intraState
+    ? '<p>CGST: ' + escDoc(gstCore.formatINR(tot.cgstPaise)) + '<br>SGST: ' + escDoc(gstCore.formatINR(tot.sgstPaise)) + '</p>'
+    : '<p>IGST: ' + escDoc(gstCore.formatINR(tot.igstPaise)) + '</p>';
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">' +
+    '<head><meta charset="utf-8"><title>' + escDoc(kind) + ' ' + escDoc(invoice.number || '') + '</title></head><body>' +
+    '<h2>' + escDoc(prof.name || 'UdyamSetu') + '</h2>' +
+    (prof.gstin ? '<p>GSTIN: ' + escDoc(prof.gstin) + '</p>' : '') +
+    (prof.address ? '<p>' + escDoc(prof.address) + '</p>' : '') +
+    '<h3>' + escDoc(kind) + (invoice.status === 'draft' ? ' (DRAFT)' : '') + '</h3>' +
+    '<p>No: ' + escDoc(invoice.number || '(draft)') + '<br>Date: ' + escDoc(invoice.date) +
+    '<br>Party: ' + escDoc(invoice.partyName) +
+    (invoice.partyGstin ? '<br>Party GSTIN: ' + escDoc(invoice.partyGstin) : '') +
+    (invoice.linkedInvoiceNumber ? '<br>Against: ' + escDoc(invoice.linkedInvoiceNumber) : '') + '</p>' +
+    '<table border="1" cellspacing="0" cellpadding="4"><tr><th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Rate</th><th>GST</th></tr>' +
+    rows + '</table>' +
+    '<p>Taxable: ' + escDoc(gstCore.formatINR(tot.taxablePaise)) + '</p>' +
+    taxRows +
+    '<p>Round off: ' + escDoc(gstCore.formatINR(tot.roundOffPaise)) + '</p>' +
+    '<p><b>Total: ' + escDoc(gstCore.formatINR(tot.roundedTotalPaise)) + '</b></p>' +
+    (prof.upiId ? '<p>Pay via UPI: ' + escDoc(prof.upiId) + '</p>' : '') +
+    '</body></html>';
+}
+
+/** JSON export of one document (bill + seller details). Pure. */
+function invoiceToExportJson(invoice, profile) {
+  return JSON.stringify({
+    app: 'UdyamSetu', version: 1,
+    exportedOn: todayISO(new Date()),
+    profile: profile ? { name: profile.name || null, gstin: profile.gstin || null, phone: profile.phone || null, address: profile.address || null, upiId: profile.upiId || null } : null,
+    document: invoice,
+  }, null, 2);
+}
+
 const invoiceApi = {
   STATES, stateName, isIntraState, rupeesToPaise,
   validateProfile, validateLine, validateInvoiceDraft,
   buildTotals, negateTotals, createInvoiceDraft, finalizeInvoice,
   makeNoteDraft, whatsappText, whatsappUrl, newId, todayISO,
+  DOC_TYPES, DOC_TYPE_LABELS, DOC_TYPE_PREFIX, docTypeLabel, isDocType,
+  isTaxableDocType, applyDocTypeToLines, docFileName, invoiceToDocHtml, invoiceToExportJson,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

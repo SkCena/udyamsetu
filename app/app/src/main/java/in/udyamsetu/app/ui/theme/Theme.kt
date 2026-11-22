@@ -1,8 +1,9 @@
-// UdyamSetu — app theme. Teal-based Material3 light + dark schemes.
-// The dark scheme keeps the same teal brand: the primary becomes a light
-// teal so it stays readable on the dark background, and the dark teal
-// becomes the primary container. No screen sets its own colours, so
-// switching the scheme here themes the whole app.
+// UdyamSetu — app theme. Premium deep-navy + gold Material3 light + dark
+// schemes. No green anywhere: the old teal brand is gone (see colors.xml).
+// Gold is the accent; on dark backgrounds the light gold stays readable,
+// and on light backgrounds a darker gold is used for text so contrast holds.
+// No screen sets its own colours, so switching the scheme here themes the
+// whole app.
 package `in`.udyamsetu.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,49 +13,55 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Brand teals — same values as TEAL_DARK / TEAL in ui/Common.kt and
-// res/values/colors.xml (teal_700 / teal_100).
-private val Teal700 = Color(0xFF0F766E)
-private val Teal500 = Color(0xFF14B8A6)
-private val Teal300 = Color(0xFF5EEAD4)
-private val Teal100 = Color(0xFFCCFBF1)
-private val Teal900 = Color(0xFF134E4A)
-private val Teal950 = Color(0xFF042F2E)
+// Brand navy + gold — same values as NAVY_DARK / NAVY / GOLD in
+// ui/Common.kt and res/values/colors.xml (navy_900 / navy_800 / gold).
+private val Navy900 = Color(0xFF16233D)
+private val Navy800 = Color(0xFF1B2A4A)
+private val Navy700 = Color(0xFF24365E)
+private val Navy100 = Color(0xFFE8EDF5)
+private val Gold = Color(0xFFC9A227)
+private val GoldLight = Color(0xFFD4AF37)
+private val GoldDark = Color(0xFF8C6D1F)
+private val GoldPale = Color(0xFFF5EED3)
 
 private val LightColors = lightColorScheme(
-    primary = Teal700,
+    primary = Navy800,
     onPrimary = Color.White,
-    primaryContainer = Teal100,
-    onPrimaryContainer = Teal900,
-    secondary = Teal500,
+    primaryContainer = Navy100,
+    onPrimaryContainer = Navy900,
+    secondary = GoldDark,
     onSecondary = Color.White,
-    secondaryContainer = Teal100,
-    onSecondaryContainer = Teal900,
-    background = Color(0xFFFFFBFF),
-    onBackground = Color(0xFF191C1C),
-    surface = Color(0xFFFFFBFF),
-    onSurface = Color(0xFF191C1C),
-    surfaceVariant = Color(0xFFDAE5E3),
-    onSurfaceVariant = Color(0xFF3F4948),
-    outline = Color(0xFF6F7979),
+    secondaryContainer = GoldPale,
+    onSecondaryContainer = Color(0xFF5C4A12),
+    tertiary = Gold,
+    onTertiary = Navy900,
+    background = Color(0xFFF8F9FC),
+    onBackground = Color(0xFF1A202C),
+    surface = Color(0xFFF8F9FC),
+    onSurface = Color(0xFF1A202C),
+    surfaceVariant = Navy100,
+    onSurfaceVariant = Color(0xFF4A5568),
+    outline = Color(0xFF7A8699),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Teal300,
-    onPrimary = Teal950,
-    primaryContainer = Teal700,
-    onPrimaryContainer = Teal100,
-    secondary = Teal300,
-    onSecondary = Teal950,
-    secondaryContainer = Teal700,
-    onSecondaryContainer = Teal100,
-    background = Color(0xFF191C1C),
-    onBackground = Color(0xFFE0E3E2),
-    surface = Color(0xFF191C1C),
-    onSurface = Color(0xFFE0E3E2),
-    surfaceVariant = Color(0xFF3F4948),
-    onSurfaceVariant = Color(0xFFBFC9C8),
-    outline = Color(0xFF899393),
+    primary = GoldLight,
+    onPrimary = Navy900,
+    primaryContainer = Navy700,
+    onPrimaryContainer = GoldPale,
+    secondary = Gold,
+    onSecondary = Navy900,
+    secondaryContainer = Navy700,
+    onSecondaryContainer = GoldPale,
+    tertiary = GoldLight,
+    onTertiary = Navy900,
+    background = Color(0xFF121A2C),
+    onBackground = Color(0xFFE8EDF5),
+    surface = Color(0xFF121A2C),
+    onSurface = Color(0xFFE8EDF5),
+    surfaceVariant = Navy700,
+    onSurfaceVariant = Color(0xFFC3CEDF),
+    outline = Color(0xFF8A97AD),
 )
 
 /**

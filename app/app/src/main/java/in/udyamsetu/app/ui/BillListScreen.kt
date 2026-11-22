@@ -42,7 +42,7 @@ fun BillListScreen(vm: AppViewModel, nav: NavHostController) {
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text("${inv.number} — ${inv.partyName}", fontWeight = FontWeight.Bold)
-                    Text("${inv.date} • ${inv.type} • ${formatRupees(inv.roundedTotalPaise)}")
+                    Text("${inv.date} • ${stringResource(docTypeLabelRes(inv.type))} • ${formatRupees(inv.roundedTotalPaise)}")
                     TextButton(onClick = { selected = if (selected == inv) null else inv }) {
                         Text(if (selected == inv) "Hide" else "Details")
                     }

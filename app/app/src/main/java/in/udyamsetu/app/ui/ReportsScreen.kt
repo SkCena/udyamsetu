@@ -75,9 +75,16 @@ fun ReportsScreen(vm: AppViewModel, nav: NavHostController) {
                 context.startActivity(Intent.createChooser(intent, "Share Tally CSV (BETA)"))
             }) { Text("Share Tally CSV (BETA)") }
             Button(onClick = {
+                // Share the real summary numbers (was a placeholder text).
+                val summary = "UdyamSetu summary\n" +
+                    "Sales: ${formatRupees(salesTotal)}\n" +
+                    "Purchases: ${formatRupees(purchaseTotal)}\n" +
+                    "Cash in: ${formatRupees(cashIn)} • Cash out: ${formatRupees(cashOut)}\n" +
+                    "Gross profit: ${formatRupees(grossProfit)}\n" +
+                    "— sent from UdyamSetu (free)"
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "UdyamSetu backup — export from Reports (JSON/CSV) is coming with Phase 2a.")
+                    putExtra(Intent.EXTRA_TEXT, summary)
                 }
                 context.startActivity(Intent.createChooser(intent, "Share"))
             }) { Text("Share summary") }

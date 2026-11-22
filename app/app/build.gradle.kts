@@ -79,6 +79,13 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
+    // Optional Drive backup (ui/BackupScreen.kt + data/DriveBackup.kt):
+    // Google Sign-In + Drive API (appDataFolder scope). The backup screen
+    // stays in "Setup pending" until the OAuth client id is filled in
+    // res/values/drive_config.xml — without it, nothing here is called.
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.drive)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))

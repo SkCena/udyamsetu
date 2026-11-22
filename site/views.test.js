@@ -80,8 +80,8 @@ ok('first-bill guide card exists (3 steps)',
   /id="firstBillGuide"/.test(html) && /data-i18n="guideStep1"/.test(html)
   && /data-i18n="guideStep2"/.test(html) && /data-i18n="guideStep3"/.test(html));
 ok('about section exists', /<section id="tab-about" class="view" hidden>/.test(html));
-ok('app.js showTab knows home + about',
-  /'home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'about'/.test(appJs));
+ok('app.js showTab knows home + about + calculator + guide',
+  /'home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'calculator', 'guide', 'about'/.test(appJs));
 ok('app.js renders home stats on home tab', /if \(name === 'home'\) renderHome\(\);/.test(appJs));
 
 // --- 4. Language-first prompt ---
@@ -152,6 +152,83 @@ ok('theme toggle shows moon in light mode and sun in dark mode (CSS)',
   && /html\[data-theme="dark"\] \.theme-toggle \.icon-sun \{ display: block; \}/.test(css));
 ok('print output is forced light even in dark mode',
   /@media print \{[\s\S]*html\[data-theme="dark"\] \{ --bg: #fff/.test(css));
+
+// --- 9. Improvement round: navy+gold theme, credit, bill types, exports,
+// calculator + guide tabs, Drive backup gating ---
+ok('no teal/green colour left in styles.css (hex or name)',
+  !/#0f766e|#0b5e57|#115e59|#2dd4bf|#5eead4|#134e4a|#99f6e4|#0f3d38|#0b2e2a|#128c4a|#22c55e|#e0f2f1/i.test(css)
+  && !/teal/i.test(css));
+ok('navy + gold palette present (light + dark)',
+  /--navy:\s*#1B2A4A/.test(css) && /--navy-dark:\s*#16233D/.test(css)
+  && /--gold:\s*#C9A227/.test(css) && /--navy:\s*#D4AF37/.test(css));
+ok('header gradient is navy with a gold rule',
+  /linear-gradient\(135deg, #16233D/.test(css) && /border-bottom: 3px solid #C9A227/.test(css));
+ok('no teal/green left in index.html theme-color or app.js theme sync',
+  !/#0f766e|#0b2e2a/i.test(html) && !/#0f766e|#0b2e2a/i.test(appJs));
+ok('theme-color meta is navy', /<meta name="theme-color" content="#16233D">/.test(html));
+ok('credit "Made by Sk Akram" in footer + About',
+  /data-i18n="credit">Made by Sk Akram/.test(html) && (html.match(/data-i18n="credit"/g) || []).length >= 2);
+ok('calculator + guide tabs exist in the nav',
+  /data-tab="calculator"/.test(html) && /data-tab="guide"/.test(html));
+ok('calculator + guide sections exist (hidden by default)',
+  /<section id="tab-calculator" class="view" hidden>/.test(html)
+  && /<section id="tab-guide" class="view" hidden>/.test(html));
+ok('calculator section has amount, rate, mode + result fields',
+  /id="calcAmount"/.test(html) && /id="calcRate"/.test(html) && /id="calcMode"/.test(html)
+  && /id="calcTaxableOut"/.test(html) && /id="calcGstOut"/.test(html) && /id="calcTotalOut"/.test(html));
+ok('guide section has a list container for the cards', /id="guideList"/.test(html));
+ok('billing form has a document type selector (GST / non-GST / estimate / receipt)',
+  /id="docType"/.test(html) && /value="invoice"/.test(html) && /value="non-gst"/.test(html)
+  && /value="estimate"/.test(html) && /value="receipt"/.test(html));
+ok('detail view has DOC + JSON export buttons',
+  /id="exportDocBtn"/.test(html) && /id="exportJsonBtn"/.test(html));
+ok('new scripts are loaded (drive-config, calculator, guide, drive)',
+  /<script src="drive-config\.js" defer>/.test(html) && /<script src="calculator\.js" defer>/.test(html)
+  && /<script src="guide\.js" defer>/.test(html) && /<script src="drive\.js" defer>/.test(html));
+ok('GIS script loads from CDN (async defer)', /accounts\.google\.com\/gsi\/client/.test(html));
+ok('drive backup section lives in Reports with passphrase + sign-in + list',
+  /id="driveSection"/.test(html) && /id="drivePassphrase"/.test(html)
+  && /id="driveSignInBtn"/.test(html) && /id="driveBackupBtn"/.test(html)
+  && /id="driveRestoreBtn"/.test(html) && /id="driveFileList"/.test(html));
+// --- 9b. Dead-button audit (device verdict: first-bill card was dead) ---
+ok('first-bill guide card itself is tappable (data-goto billing, not just its button)',
+  /<div id="firstBillGuide" class="guide-card" data-goto="billing" role="button" tabindex="0"/.test(html));
+ok('app.js wires every [data-goto] element, cards included',
+  /querySelectorAll\('\[data-goto\]'\)/.test(appJs) && /showTab\(b\.getAttribute\('data-goto'\)\)/.test(appJs));
+ok('non-button [data-goto] cards answer Enter/Space too',
+  /tagName !== 'BUTTON'/.test(appJs) && /e\.key === 'Enter'/.test(appJs));
+ok('tappable guide cards show a pointer cursor',
+  /\.guide-card\[data-goto\] \{ cursor: pointer; \}/.test(css));
+const app12Js = fs.readFileSync(path.join(__dirname, 'app12.js'), 'utf8');
+ok('stock rows are real buttons that pick the item in the movement/batch forms',
+  /const b = document\.createElement\('button'\);\n      b\.type = 'button';\n      b\.className = 'inv-item';/.test(app12Js)
+  && /mSel\.value = it\.id/.test(app12Js) && /bSel\.value = it\.id/.test(app12Js));
+ok('due-reminder rows open the party (WhatsApp link still works via closest guard)',
+  /row\.addEventListener\('click', openParty\)/.test(app12Js)
+  && /e\.target\.closest\('a'\)/.test(app12Js) && /selectParty\(d\.party\.id\)/.test(app12Js));
+const guideJs = fs.readFileSync(path.join(__dirname, 'guide.js'), 'utf8');
+ok('GST guide cards are an accordion (tap folds/unfolds)',
+  /guide-toggle/.test(guideJs) && /classList\.toggle\('collapsed'\)/.test(guideJs));
+ok('collapsed guide cards hide their body (CSS)',
+  /\.guide-card\.guide-toggle\.collapsed \.guide-step \{ display: none; \}/.test(css));
+// A button counts as wired if its id is looked up in app.js / app12.js / drive.js,
+// or (submit buttons) if its form's submit is wired.
+const driveJs = fs.readFileSync(path.join(__dirname, 'drive.js'), 'utf8');
+ok('every button in the static HTML is wired or a real link (no dead button ids)',
+  ['themeToggle', 'addLine', 'saveDraftBtn', 'saveInvoiceBtn', 'clearFormBtn', 'backToList',
+   'printA4Btn', 'printThermalBtn', 'creditNoteBtn', 'debitNoteBtn', 'exportDocBtn',
+   'exportJsonBtn', 'driveSignInBtn', 'driveBackupBtn', 'driveRestoreBtn', 'langContinueBtn']
+    .every((id) => new RegExp("\\$\\('" + id + "'\\)").test(appJs)
+      || new RegExp("\\$\\('" + id + "'\\)").test(app12Js)
+      || (id === 'saveInvoiceBtn' && appJs.includes("$('billingForm').addEventListener('submit'"))
+      || (/drive/.test(id) && /getElementById\(id\)/.test(driveJs))));
+
+const driveCfg = fs.readFileSync(path.join(__dirname, 'drive-config.js'), 'utf8');
+ok('drive-config.js is an empty placeholder (no secret, no client id)',
+  /clientId: ''/.test(driveCfg)
+  && driveCfg.split('\n').map((l) => l.split('//')[0]).join('\n').indexOf('googleusercontent') === -1);
+ok('service worker caches the new modules', /'\.\/calculator\.js'/.test(swJs) && /'\.\/guide\.js'/.test(swJs)
+  && /'\.\/drive\.js'/.test(swJs) && /'\.\/drive-config\.js'/.test(swJs));
 
 // --- 8. SPEC documents the views ---
 ok('SPEC has a Web views section', /## Web views/.test(spec));

@@ -27,6 +27,9 @@ fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
             BigButton(stringResource(R.string.tab_gst)) { nav.navigate(Routes.GST) }
             BigButton(stringResource(R.string.tab_payroll)) { nav.navigate(Routes.PAYROLL) }
             BigButton(stringResource(R.string.tab_reports)) { nav.navigate(Routes.REPORTS) }
+            BigButton(stringResource(R.string.tab_calculator)) { nav.navigate(Routes.CALCULATOR) }
+            BigButton(stringResource(R.string.tab_guide)) { nav.navigate(Routes.GUIDE) }
+            BigButton(stringResource(R.string.tab_backup)) { nav.navigate(Routes.BACKUP) }
             BigButton(stringResource(R.string.lang_prompt_title)) { nav.navigate(Routes.LANGUAGE) }
             BigButton(stringResource(R.string.tab_about)) { nav.navigate(Routes.ABOUT) }
         }

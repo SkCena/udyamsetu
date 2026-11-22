@@ -25,6 +25,11 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
         item {
             SectionTitle(stringResource(R.string.about_title))
             Text(stringResource(R.string.about_text))
+            Text(
+                stringResource(R.string.credit),
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            BigButton(stringResource(R.string.tab_backup)) { nav.navigate(Routes.BACKUP) }
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 Text(stringResource(R.string.github_title))
                 Text(stringResource(R.string.github_note))

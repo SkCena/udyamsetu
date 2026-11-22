@@ -56,7 +56,9 @@ data class DraftBill(
     val partyGstin: String = "",
     val buyerState: String = "21",
     val lines: List<DraftLine> = listOf(DraftLine()),
-    /** "invoice" | "credit-note" | "debit-note" */
+    /** "invoice" | "non-gst" | "estimate" | "credit-note" | "debit-note" | "receipt"
+     *  (see logic/BillTypes.kt for what each type means for totals, stock
+     *  and GST reports). */
     val type: String = "invoice",
     val againstNumber: String = "",
 )

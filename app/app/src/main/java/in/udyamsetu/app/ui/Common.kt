@@ -17,6 +17,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import `in`.udyamsetu.app.R
+
+/** Doc-type -> translated label. Invoice / non-GST / estimate / receipt
+ *  labels come from the shared strings (site/i18n.js); the two note
+ *  labels are app-only (the Site has no label for them). */
+fun docTypeLabelRes(type: String): Int = when (type) {
+    "non-gst" -> R.string.doc_non_gst
+    "estimate" -> R.string.doc_estimate
+    "credit-note" -> R.string.doc_type_credit_note
+    "debit-note" -> R.string.doc_type_debit_note
+    "receipt" -> R.string.doc_receipt
+    else -> R.string.doc_invoice
+}
 
 /** Paise -> "₹236.00" (negative keeps the minus sign). */
 fun formatRupees(paise: Long): String {
@@ -25,8 +38,12 @@ fun formatRupees(paise: Long): String {
     return "$sign₹${abs / 100}.${(abs % 100).toString().padStart(2, '0')}"
 }
 
-val TEAL_DARK = Color(0xFF0F766E)
-val TEAL = Color(0xFF14B8A6)
+/** Brand navy + gold (premium, no green). Same values as Theme.kt and
+ *  res/values/colors.xml (navy_800 / navy_900 / gold). */
+val NAVY = Color(0xFF1B2A4A)
+val NAVY_DARK = Color(0xFF16233D)
+val GOLD = Color(0xFFC9A227)
+val GOLD_LIGHT = Color(0xFFD4AF37)
 
 @Composable
 fun SectionTitle(text: String) {
