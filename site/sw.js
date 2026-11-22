@@ -2,7 +2,7 @@
 // No network calls are made by the app itself; the cache only holds local files.
 'use strict';
 
-const CACHE = 'udyamsetu-site-v3';
+const CACHE = 'udyamsetu-site-v4'; // bumped: desktop view + Home/About + language-first prompt
 const ASSETS = [
   './',
   './index.html',

@@ -41,9 +41,10 @@
   }
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === name));
-    ['setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports'].forEach((n) => {
+    ['home', 'setup', 'billing', 'list', 'detail', 'party', 'stock', 'gst', 'payroll', 'reports', 'about'].forEach((n) => {
       $('tab-' + n).hidden = (n !== name);
     });
+    if (name === 'home') renderHome();
     if (name === 'list') renderList();
     if (name === 'billing') $('setupWarn').hidden = !!(profile && profile.name);
     // Phase 1.2 tabs live in app12.js — render on show, if loaded.
@@ -363,6 +364,79 @@
     window.print();
   }
 
+  // ---------------- home: stats, FTU, language-first prompt ----------------
+  const FTU_KEY = 'udyamsetu.ftu';
+
+  // Home stats are best-effort — a stats failure must never break the Site.
+  async function renderHome() {
+    try {
+      const today = todayISO(new Date());
+      const invoices = await store.listInvoices();
+      let salesToday = 0;
+      let hasAny = false;
+      invoices.forEach((inv) => {
+        if (inv.status === 'saved') {
+          hasAny = true;
+          if (inv.date === today && inv.totals) salesToday += inv.totals.roundedTotalPaise;
+        }
+      });
+      $('homeStatSales').textContent = formatINR(salesToday);
+      let udhaar = 0;
+      try {
+        const partyApi = window.UdyamSetu.party;
+        const parties = await store.listParties();
+        const entries = await store.listLedger();
+        parties.forEach((p) => { const b = partyApi.partyBalance(p, entries); if (b > 0) udhaar += b; });
+      } catch (e) { /* udhaar stays 0 */ }
+      $('homeStatUdhaar').textContent = formatINR(udhaar);
+      let lowCount = 0;
+      try {
+        const invtApi = window.UdyamSetu.inventory;
+        const items = await store.listItems();
+        const movements = await store.listMovements();
+        lowCount = invtApi.lowStock(items, movements).length;
+      } catch (e) { /* stays 0 */ }
+      $('homeStatLowStock').textContent = String(lowCount);
+      // Guided first bill: show the 3-step card until the first bill is saved.
+      $('firstBillGuide').hidden = hasAny;
+    } catch (e) { /* home stats failed — site still works */ }
+  }
+
+  function loadFtu() {
+    try {
+      const raw = localStorage.getItem(FTU_KEY);
+      if (!raw) return;
+      const f = JSON.parse(raw);
+      if (f.shopType) $('ftuShopType').value = f.shopType;
+      if (f.gst) $('ftuGst').value = f.gst;
+      if (f.sell) $('ftuSell').value = f.sell;
+    } catch (e) { /* ignore — fresh FTU */ }
+  }
+
+  // Language pehle screen pe (REA §6.1): first visit par language poochho,
+  // settings/header tab me chhupao mat. Choice ek baar save hote hi dobara nahi poochho.
+  function showLangPromptIfNeeded() {
+    const promptEl = $('langPrompt');
+    if (!promptEl) return;
+    if (i18nMod.hasChosenLang()) { promptEl.hidden = true; return; }
+    const btnsWrap = $('langPromptBtns');
+    btnsWrap.innerHTML = '';
+    i18nMod.SUPPORTED_LANGS.forEach((l) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = l.native;
+      if (l.code === lang) b.classList.add('selected');
+      b.addEventListener('click', () => {
+        lang = i18nMod.setLang(l.code);
+        i18nMod.markLangChosen();
+        applyLang();
+        promptEl.hidden = true;
+      });
+      btnsWrap.appendChild(b);
+    });
+    promptEl.hidden = false;
+  }
+
   // ---------------- wire up ----------------
   document.addEventListener('DOMContentLoaded', async () => {
     profile = await store.getProfile();
@@ -372,6 +446,32 @@
     renderLines();
     updateTotals();
     applyLang();
+    loadFtu();
+    renderHome();
+    showLangPromptIfNeeded();
+
+    document.querySelectorAll('[data-goto]').forEach((b) =>
+      b.addEventListener('click', () => showTab(b.getAttribute('data-goto'))));
+    $('langContinueBtn').addEventListener('click', () => {
+      i18nMod.markLangChosen();
+      $('langPrompt').hidden = true;
+    });
+    $('ftuForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const msg = $('ftuMsg');
+      msg.classList.remove('err');
+      try {
+        localStorage.setItem(FTU_KEY, JSON.stringify({
+          shopType: $('ftuShopType').value,
+          gst: $('ftuGst').value,
+          sell: $('ftuSell').value.trim(),
+        }));
+        msg.textContent = t('setupSaved');
+      } catch (err) {
+        msg.textContent = t('setupInvalid');
+        msg.classList.add('err');
+      }
+    });
 
     document.querySelectorAll('.tab').forEach((b) =>
       b.addEventListener('click', () => showTab(b.getAttribute('data-tab'))));

@@ -31,11 +31,16 @@
       <p class="tagline" data-i18n="tagline">Chhoti dukaan ka GST billing — free, offline</p>
     </div>
   </div>
-  <select id="langSelect" class="lang-select" aria-label="Language / Bhasha"></select>
+  <div class="header-actions">
+    <a class="github-link" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
+    <select id="langSelect" class="lang-select" aria-label="Language / Bhasha"></select>
+  </div>
 </header>
 
+<div class="shell">
 <nav class="tabs" aria-label="Sections">
-  <button class="tab active" data-tab="setup" type="button" data-i18n="tabSetup">Setup</button>
+  <button class="tab active" data-tab="home" type="button" data-i18n="tabHome">Home</button>
+  <button class="tab" data-tab="setup" type="button" data-i18n="tabSetup">Setup</button>
   <button class="tab" data-tab="billing" type="button" data-i18n="tabBilling">Naya Bill</button>
   <button class="tab" data-tab="list" type="button" data-i18n="tabList">Bill List</button>
   <button class="tab" data-tab="party" type="button" data-i18n="tabParty">Party / Udhaar</button>
@@ -43,11 +48,68 @@
   <button class="tab" data-tab="gst" type="button" data-i18n="tabGst">GST Report</button>
   <button class="tab" data-tab="payroll" type="button" data-i18n="tabPayroll">Salary</button>
   <button class="tab" data-tab="reports" type="button" data-i18n="tabReports">Reports</button>
+  <button class="tab" data-tab="about" type="button" data-i18n="tabAbout">About</button>
 </nav>
 
 <main id="app">
+  <!-- ============ HOME ============ -->
+  <section id="tab-home" class="view">
+    <h2 data-i18n="homeTitle">Home — Today</h2>
+    <p class="hint" data-i18n="homeHint">Udhaar stays remembered, GST report gets made — everything free, on your phone.</p>
+    <div class="quick-grid">
+      <button class="quick-btn" type="button" data-goto="billing"><span data-i18n="quickBill">New Bill</span></button>
+      <button class="quick-btn" type="button" data-goto="party"><span data-i18n="quickUdhaar">Udhaar</span></button>
+      <button class="quick-btn" type="button" data-goto="stock"><span data-i18n="quickStock">Stock</span></button>
+      <button class="quick-btn" type="button" data-goto="party"><span data-i18n="quickPayment">Payment</span></button>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box"><span class="stat-label" data-i18n="statSales">Today's sale</span><strong id="homeStatSales">₹0.00</strong></div>
+      <div class="stat-box"><span class="stat-label" data-i18n="statUdhaar">Udhaar pending</span><strong id="homeStatUdhaar">₹0.00</strong></div>
+      <div class="stat-box"><span class="stat-label" data-i18n="statLowStock">Low stock</span><strong id="homeStatLowStock">0</strong></div>
+    </div>
+    <div class="ftu-card">
+      <h3 data-i18n="ftuTitle">3 small questions — setup your way</h3>
+      <form id="ftuForm" novalidate>
+        <label class="field"><span data-i18n="ftuShopType">What type of shop is it?</span>
+          <select id="ftuShopType">
+            <option value="kirana">Kirana</option>
+            <option value="clothes">Clothes</option>
+            <option value="electronics">Electronics</option>
+            <option value="service">Service</option>
+            <option value="other">Other</option>
+          </select></label>
+        <label class="field"><span data-i18n="ftuGst">Are you GST registered?</span>
+          <select id="ftuGst"><option value="yes">Yes</option><option value="no">No</option></select></label>
+        <label class="field"><span data-i18n="ftuSell">What do you sell?</span>
+          <input id="ftuSell" type="text" placeholder="e.g. Rice, dal, oil"></label>
+        <p id="ftuMsg" class="msg" role="status"></p>
+        <button class="btn btn-primary" type="submit" data-i18n="ftuSave">Save</button>
+      </form>
+    </div>
+    <div id="firstBillGuide" class="guide-card" hidden>
+      <h3 data-i18n="firstBillTitle">First bill — 3 steps</h3>
+      <p class="guide-step" data-i18n="guideStep1">1. Fill the shop name in Setup</p>
+      <p class="guide-step" data-i18n="guideStep2">2. Choose a party or add a new one</p>
+      <p class="guide-step" data-i18n="guideStep3">3. Add items, check the preview, save the bill</p>
+      <button class="btn btn-primary" type="button" data-goto="billing"><span data-i18n="quickBill">New Bill</span></button>
+    </div>
+    <div class="apk-card">
+      <h3 data-i18n="apkTitle">Features that need the APK</h3>
+      <p class="hint" data-i18n="apkNote">These cannot work in a browser — they need the Android app (APK). Everything else is right here on this site.</p>
+      <ul class="apk-list">
+        <li>Barcode scan <span class="apk-badge" data-i18n="apkBadge">APK needed</span></li>
+        <li>Home widget <span class="apk-badge" data-i18n="apkBadge">APK needed</span></li>
+        <li>Background sync (Drive auto-backup) <span class="apk-badge" data-i18n="apkBadge">APK needed</span></li>
+      </ul>
+      <div class="btn-row wrap">
+        <a class="btn btn-primary" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
+        <a class="btn" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ SETUP ============ -->
-  <section id="tab-setup" class="view">
+  <section id="tab-setup" class="view" hidden>
     <h2 data-i18n="setupTitle">Vyavsay Setup — Business Setup</h2>
     <p class="hint" data-i18n="setupHint">Ek baar bhar dein — har bill par yehi details aayengi. Badal bhi sakte hain.</p>
     <form id="setupForm" novalidate>
@@ -390,11 +452,33 @@
       <button id="expBundle" class="btn" type="button">Full Backup JSON</button>
     </div>
   </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="tab-about" class="view" hidden>
+    <h2 data-i18n="aboutTitle">About — UdyamSetu</h2>
+    <p data-i18n="aboutText">UdyamSetu is free GST billing for small shops — no paywall, no ads, your data stays on your phone. The GitHub repo is private for now — the link will open once it is public.</p>
+    <div class="btn-row wrap">
+      <a class="btn" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a>
+      <a class="btn" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a>
+    </div>
+  </section>
 </main>
+</div>
 
 <footer class="app-footer">
   <p data-i18n="footer">UdyamSetu — free, offline, aapka data aapke phone par hi rehta hai.</p>
+  <p><a class="github-link footer-link" href="https://github.com/SkCena/udyamsetu" target="_blank" rel="noopener" data-i18n="githubLink">GitHub repo</a> · <a class="footer-link" href="https://github.com/SkCena/udyamsetu/releases" target="_blank" rel="noopener">APK download</a></p>
 </footer>
+
+<!-- First-screen language prompt (shown once, until the user picks a language). -->
+<div id="langPrompt" class="lang-prompt" hidden role="dialog" aria-modal="true" aria-labelledby="langPromptTitle">
+  <div class="lang-prompt-card">
+    <h2 id="langPromptTitle" data-i18n="langPromptTitle">Choose your language</h2>
+    <p class="hint" data-i18n="langPromptHint">English is the default. Choose your language.</p>
+    <div id="langPromptBtns" class="lang-grid"></div>
+    <button id="langContinueBtn" class="btn btn-primary" type="button" data-i18n="langContinue">Continue in English</button>
+  </div>
+</div>
 
 <!-- Print-only area: filled with the same invoice HTML as the detail view. -->
 <div id="print-area" aria-hidden="true"></div>

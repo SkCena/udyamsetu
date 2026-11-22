@@ -33,6 +33,20 @@ Success: the shop can set up in 5 minutes and make a correct GST invoice
 offline, print/share it as PDF, and the totals match hand calculation to the
 paise.
 
+## Site-complete + GitHub-everywhere LOCK (2026-11-22, user)
+- **Site me SAB hoga** — koi feature sirf APK me nahi hoga. Jo kaam browser
+  me ho sakta hai, wo Site par hoga.
+- Kuch options sirf APK me ho sakte hain, kyunki browser me nahi ho sakte
+  (barcode scan, home widget, background sync / Drive auto-backup). Wo
+  options Site par saaf **"APK chahiye"** badge ke saath marked hain, aur
+  unke saath APK download link hai (`https://github.com/SkCena/udyamsetu/releases`
+  — pehla APK release aane par wahan milega; koi fake direct `.apk` URL nahi hai).
+- **GitHub link har jagah hai** — Site ke header, footer, Home card, About
+  section (aur App me About me bhi hoga jab App banega). Repo URL:
+  `https://github.com/SkCena/udyamsetu`. Repo abhi **PRIVATE** hai, isliye ye
+  link tabhi khulega jab user repo ko public karega — link phir bhi daala
+  hai, aur About me ye baat likhi hai.
+
 Source plan: `~/workspace/research_notes/vyapar-tally-zoho-rea-20261122/plan-and-name.md`
 Source REA: `~/workspace/research_notes/vyapar-tally-zoho-rea-20261122/report.md`
 
@@ -79,7 +93,9 @@ Site tests:   node core/gst.test.js            (114 tests)
               node site/payroll-reports.test.js (82)
               node site/integration.test.js     (53)
               node site/i18n.test.js            (33)
-              Total: 550 tests, all green (2026-11-22)
+              node site/views.test.js           (48 — mobile/desktop views, Home, FTU,
+                                                 language prompt, APK markers, GitHub links)
+              Total: 598 tests, all green (2026-11-22)
 Browser load smoke: node /tmp/udyamsetu-smoke.js  (all 12 scripts load in
   order, DOMContentLoaded handlers run, all 5 Phase 1.2 tabs render)
 Kotlin tests: kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar && java -jar /tmp/gst-test.jar
@@ -173,6 +189,23 @@ docs/                -> Device test cards + notes
 - [ ] Device test card for Phase 1.2 written — see
       `docs/DEVICE-TEST-1.2-site.md` (user runs it on the phone).
 
+## Success Criteria (Site polish — Desktop view + REA structure, 2026-11-22, headless-verified)
+- [x] Desktop view: sidebar nav (240px) + 1180px content at >= 1024px;
+      mobile base CSS untouched (views.test.js proves it).
+- [x] Home view: 4 Quick buttons (Bill/Udhaar/Stock/Payment), today stats
+      (sale/udhaar/low-stock), FTU 3 questions, first-bill 3-step guide.
+- [x] Language-first prompt: first visit par language poochna, choice save
+      hote hi dobara nahi poochna (i18n.hasChosenLang/markLangChosen).
+- [x] Site-complete: sab features Site par; browser-impossible options
+      (barcode scan, home widget, background sync) "APK chahiye" badge +
+      APK download link (GitHub Releases, no fake .apk URL).
+- [x] GitHub link har jagah: header, footer, Home card, About
+      (`https://github.com/SkCena/udyamsetu` — private hai, public hone ke
+      baad hi khulega; About me ye likha hai).
+- [x] All 598 node tests green; browser load smoke green; 16/16 files HTTP 200.
+- [ ] Visual device check pending: 360px phone + 1280px desktop par khol
+      ke dekhna (user runs it on the phone/browser).
+
 ## Phase 1.3 — CA pilot (APK REA §8)
 
 Goal: jo "DRAFT / BETA" hai, use real CA se validate karke hi "ready" bolna.
@@ -221,16 +254,60 @@ apne tareeke se banayenge.
 
 | Seekh | UdyamSetu me apne tareeke se | Phase |
 |---|---|---|
-| Language pehle screen pe (Vyapar) | Pehle screen pe language poochna (English default, Hindi + 10 languages tab) — settings me chhupana nahi | 1.2 tab DONE → pehle-screen prompt Phase 2 (App) |
-| FTU = 3 chhote sawaal | Setup me 3 sawaal (duk kaan type, GST hai ya nahi, kya bechte ho) — uske hisaab se dashboard | Phase 2 (App) |
-| Guided pehla bill + preview | Pehli baar bill banate waqt step guide + save se pehle preview (galti pakadne ka step) | Phase 2 (App) |
-| Quick Create (Zoho) | Home pe 4 bade button — Bill, Udhaar, Stock, Payment — ek tap me | Phase 2 (App) |
+| Language pehle screen pe (Vyapar) | Pehle screen pe language poochna (English default, Hindi + 10 languages tab) — settings me chhupana nahi | **Site DONE** (first-visit prompt, `site/app.js` + `i18n.hasChosenLang`); App me bhi hoga Phase 2 |
+| FTU = 3 chhote sawaal | Setup me 3 sawaal (duk kaan type, GST hai ya nahi, kya bechte ho) — uske hisaab se dashboard | **Site DONE** (Home card, `localStorage udyamsetu.ftu`); App me bhi hoga Phase 2 |
+| Guided pehla bill + preview | Pehli baar bill banate waqt step guide + save se pehle preview (galti pakadne ka step) | **Site DONE (guide)** — Home pe 3-step guide card (pehle bill tak) + bill detail view = preview; **pre-save preview Phase 2 (App)** |
+| Quick Create (Zoho) | Home pe 4 bade button — Bill, Udhaar, Stock, Payment — ek tap me | **Site DONE** (Home quick-grid); App me bhi hoga Phase 2 |
 | Home widget (Zoho) | Android home widget — phone ke home se seedha bill, app khole bina | Phase 2 (App) |
 | Party se seedha bill (Zoho) | Party kholo → usi se bill / payment / udhaar (context se kaam, wapas jaake dhoondhna nahi) | 1.2 DONE (party se statement/payment); bill Phase 2 (App) |
 | Welcome screens me fayda, feature nahi (Zoho) | Onboarding me fayda likhna ("udhaar yaad rahega", "GST report ban jayega") — feature list nahi | Phase 2 (App) |
 | HSN offline (Vyapar) | HSN master app ke andar (offline lookup, type karte hi suggestion, internet nahi chahiye) | Phase 2 (App; Site me list) |
 | Shimmer + empty-state guide | Khaali screen pe guide ("+ dabake pehla bill banao"), blank screen nahi | 1.2 Site partial → Phase 2 (App) |
 | 3-tap bill target — acceptance test | Home → Party → Items → Preview/Share: bill 3 tap me shuru, 5 tap me share. Ye Phase 2 ka acceptance test hai | Phase 2 (App) |
+
+## Web views — Mobile + Desktop (Site, 2026-11-22)
+
+User lock: REA me jo sab nikla, wo achhe sahi structure se hamare me hoga,
+easy way. Web ke liye **alag mobile aur desktop view** honge — dono pe sab
+sahi; App ka bhi sab sahi hoga. Site ek hi HTML file hai (`site/index.html`);
+view sirf CSS se badalta hai — mobile ka base CSS kabhi nahi tootta.
+
+### Mobile view (default, < 1024px — phone pehle)
+- Ek column: header upar, tabs neeche (wrap hote hain, 2–3 row me), phir
+  content card. Sab kuch ek haath se chale — bade button, bade input.
+- Quick actions: Home pe 4 bade button 2×2 grid me.
+- Forms: ek column; `.field-row` wale field 2 side-by-side (chhote).
+- Bill lines: 2-column grid (HSN/Qty, Price/Disc, GST).
+- Lists: ek column, ek ke neeche ek.
+- Language prompt: full-screen overlay, 2-column language grid.
+- Base CSS (`styles.css`, `@media` se pehle) mobile ka hai — desktop rules
+  isme nahi hain. Mobile check: `node site/views.test.js` (base rules).
+
+### Desktop view (>= 1024px, `styles.css` me `@media (min-width: 1024px)`)
+- **Sidebar navigation:** tabs left side vertical column (240px, sticky),
+  content right side. Active tab teal background.
+- **Chauda content:** shell max-width 1180px; view padding 24px 28px.
+- **Multi-column jahan sahi ho:** Quick buttons 4 ek row me; invoice list
+  2 column; bill-line editor 5 column (Item bada, baaki chhote); Setup /
+  Party / Stock forms 2 column (field-row, msg, button full-width span);
+  totals right side (max-width 440px); FTU form 2 column; language prompt
+  card 520px, language grid 5 column.
+- Header/footer bhi 1180px tak chauda hota hai.
+- Print CSS (A4 / 80mm thermal) desktop/mobile dono se alag hai — usme
+  koi badlav nahi.
+
+### Acceptance
+- Mobile (360px): saare 10 tabs dikhte hain, Home pe 4 Quick button 2×2,
+  form submit bina scroll kiye mushkil nahi, koi horizontal scroll nahi.
+- Desktop (1280px): sidebar left me, content right me; saare form/list
+  bina overlap ke dikhte hain; Quick button 4 ek row me.
+- Dono views me: Home stats, FTU, first-bill guide, APK card, GitHub links
+  (header/footer/Home/About) aur language prompt sahi kaam karte hain.
+- Check: `node site/views.test.js` — 48 static checks (mobile base +
+  desktop rules + Home/FTU/prompt/APK/GitHub). Ye **static check** hai,
+  render test nahi.
+- Visual check (browser/device) abhi baki hai: 360px phone + 1280px
+  desktop par khol ke dekhna — user ke device test card me likha hai.
 
 ## Deferred with reason (APK REA §8, 2026-11-22 — dropped nahi, baad me)
 

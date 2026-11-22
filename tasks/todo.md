@@ -37,3 +37,13 @@
     16/16 files HTTP 200 over local http server
 - [x] Task 13: Docs — SPEC.md (Phase 1.2 + language lock + risks), README, tasks/plan.md,
       docs/DEVICE-TEST-1.2-site.md (user to run on phone; no device pass claimed)
+
+# UdyamSetu tasks — Site polish (Desktop view + REA structure + Site-complete, 2026-11-22)
+
+- [x] Task 14: Desktop view + Home/FTU/language-first prompt + APK markers + GitHub everywhere
+  - Desktop: @media 1024px sidebar nav (240px) + 1180px content, multi-column forms/lists; mobile base untouched
+  - Home: 4 Quick buttons, today stats, FTU 3 questions (localStorage), first-bill 3-step guide
+  - Language-first prompt (first visit only, hasChosenLang/markLangChosen); 29 new i18n keys x 10 languages
+  - Site-complete: APK-needed options (barcode scan, home widget, background sync) "APK chahiye" badge + Releases link; GitHub link header/footer/Home/About
+  - Verify: node site/views.test.js → 48 passed, 0 failed; all 598 tests green; smoke PASS; 16/16 files HTTP 200
+  - Visual check pending: 360px phone + 1280px desktop browser render (user device test)
