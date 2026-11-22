@@ -86,6 +86,11 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.drive)
+    // AndroidHttp (com.google.api.client.extensions.android.http) no longer
+    // ships in google-api-client-android 2.x — it lives in
+    // google-http-client-android. Without this, CI run #8 failed on
+    // "Unresolved reference 'extensions'" in DriveBackup.kt.
+    implementation(libs.google.http.client.android)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
