@@ -27,6 +27,22 @@
     updateTaxKind();
   }
 
+  // ---------------- theme: Light / Dark (header toggle, saved) ----------------
+  // The <head> inline script already sets data-theme before first paint;
+  // this only wires the toggle button and keeps the saved choice + the
+  // browser chrome colour in sync.
+  const THEME_KEY = 'udyamsetu.theme';
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+  function setTheme(mode) {
+    const next = mode === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode — theme still applies this session */ }
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', next === 'dark' ? '#0b2e2a' : '#0f766e');
+  }
+
   // ---------------- helpers ----------------
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -449,6 +465,12 @@
     loadFtu();
     renderHome();
     showLangPromptIfNeeded();
+    // Theme: sync the browser chrome colour with the theme the <head>
+    // script already applied, and wire the header toggle button.
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', currentTheme() === 'dark' ? '#0b2e2a' : '#0f766e');
+    const themeBtn = $('themeToggle');
+    if (themeBtn) themeBtn.addEventListener('click', () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark'));
 
     document.querySelectorAll('[data-goto]').forEach((b) =>
       b.addEventListener('click', () => showTab(b.getAttribute('data-goto'))));

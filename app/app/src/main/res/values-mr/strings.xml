@@ -115,4 +115,8 @@
     <string name="tab_bills">Bills</string>
     <string name="tab_more">More</string>
     <string name="widget_title">New bill</string>
+    <string name="theme_title">थीम</string>
+    <string name="theme_system">सिस्टीम</string>
+    <string name="theme_light">हलका</string>
+    <string name="theme_dark">गडद</string>
 </resources>

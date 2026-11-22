@@ -115,4 +115,8 @@
     <string name="tab_bills">Bills</string>
     <string name="tab_more">More</string>
     <string name="widget_title">New bill</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
 </resources>

@@ -2,7 +2,7 @@
 // No network calls are made by the app itself; the cache only holds local files.
 'use strict';
 
-const CACHE = 'udyamsetu-site-v4'; // bumped: desktop view + Home/About + language-first prompt
+const CACHE = 'udyamsetu-site-v5'; // bumped: gst-core.js now lives in site/ (Pages serves only site/), themes
 const ASSETS = [
   './',
   './index.html',
@@ -20,7 +20,7 @@ const ASSETS = [
   './i18n.js',
   './manifest.json',
   './icon.svg',
-  '../core/gst.js',
+  './gst-core.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -31,6 +31,10 @@ val Application.dataStore by preferencesDataStore(name = "udyamsetu_prefs")
 private val LANG_KEY = stringPreferencesKey("lang")
 private val LANG_CHOSEN_KEY = stringPreferencesKey("lang_chosen")
 private val FTU_KEY = stringPreferencesKey("ftu")
+private val THEME_KEY = stringPreferencesKey("theme")
+
+/** Theme modes: "system" (device setting, default) | "light" | "dark". */
+val THEME_MODES = listOf("system", "light", "dark")
 
 data class FtuAnswers(
     val shopType: String = "",
@@ -79,6 +83,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _ftu = MutableStateFlow(FtuAnswers())
     val ftu: StateFlow<FtuAnswers> = _ftu.asStateFlow()
 
+    // --- Theme ("system" default; saved, survives restarts) ---------------
+    private val _themeMode = MutableStateFlow("system")
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
     // --- Draft bill (hoisted: survives tab switches) ----------------------
     private val _draft = MutableStateFlow(DraftBill())
     val draft: StateFlow<DraftBill> = _draft.asStateFlow()
@@ -98,7 +106,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val parts = ftuRaw.split("|")
                 if (parts.size == 3) _ftu.value = FtuAnswers(parts[0], parts[1], parts[2])
             }
+            val theme = prefs[THEME_KEY] ?: "system"
+            if (theme in THEME_MODES) _themeMode.value = theme
         }
+    }
+
+    /** Theme choice: saves to DataStore and applies at once. */
+    fun setThemeMode(mode: String) {
+        val safe = if (mode in THEME_MODES) mode else "system"
+        _themeMode.value = safe
+        // Plain SharedPreferences copy: MainActivity reads it
+        // synchronously at launch so the first frame already uses the
+        // saved theme (DataStore is async). Same pattern as language.
+        getApplication<Application>()
+            .getSharedPreferences("udyamsetu_theme", android.content.Context.MODE_PRIVATE)
+            .edit().putString("theme_mode", safe).apply()
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[THEME_KEY] = safe }
+        }
+    }
+
+    /** Sync seed from the SharedPreferences mirror, read in onCreate. */
+    fun applyThemeMode(mode: String) {
+        if (mode in THEME_MODES) _themeMode.value = mode
     }
 
     fun setLanguage(code: String) {

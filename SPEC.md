@@ -88,7 +88,7 @@ fully, the field labels are the next i18n step.
 ## Commands
 
 ```bash
-# Site tests — 598 tests, all green
+# Site tests — 607 tests, all green
 node core/gst.test.js            # 114
 node site/app.test.js            # 78
 node site/party-inventory.test.js # 87
@@ -96,12 +96,16 @@ node site/gst-einvoice.test.js   # 103
 node site/payroll-reports.test.js # 82
 node site/integration.test.js    # 53
 node site/i18n.test.js           # 33
-node site/views.test.js          # 48 — mobile/desktop views, Home, FTU,
-                                 # language prompt, APK markers, GitHub links
+node site/views.test.js          # 57 — mobile/desktop views, Home, FTU,
+                                 # language prompt, APK markers, GitHub links,
+                                 # gst-core sync + Light/Dark theme
 
 # Browser load smoke — all 12 scripts load in order, handlers run,
 # all 5 Phase 1.2 tabs render
-node /tmp/udyamsetu-smoke.js
+node tools/smoke.js
+
+# GST core sync (Site loads site/gst-core.js — see "Live-site fix" below)
+node tools/sync-site-core.js
 
 # Kotlin core tests
 kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar
@@ -273,9 +277,38 @@ docs/                -> Device test cards + notes
   "APK chahiye" badge + APK download link (GitHub Releases, no fake
   `.apk` URL).
 - GitHub link everywhere: header, footer, Home card, About.
-- 598 node tests green; browser load smoke green; 16/16 files HTTP 200.
+- 607 node tests green; browser load smoke green; 16/16 files HTTP 200.
 - Still open: look at it on a real phone (360px) and a real desktop
   (1280px) — the visual check is in the device test card.
+
+### Premium look + Light / Dark themes (2026-11-22, user asked on the live site)
+
+- Look: soft shadows, rounded (14px) cards, gradient teal header,
+  bigger touch targets, clear hierarchy. Own design — nothing copied
+  from other apps. No function changed, only the look.
+- Theme: header sun/moon toggle. Light is the default when the phone
+  has no preference; otherwise the phone's setting is used. The choice
+  is saved in localStorage (`udyamsetu.theme`) and stays after reload.
+  An inline script in `<head>` applies the theme before first paint
+  (no white flash). Print output is always light. The App has the same
+  idea in Material3 (light + dark schemes, setting in the app).
+
+### Live-site fix — GST core 404 on GitHub Pages (FOUND 2026-11-22)
+
+- What happened: the user opened the live site and no tab beyond Home
+  worked. Cause: Pages deploys ONLY the `site/` folder, but
+  `index.html` loaded `../core/gst.js` — on the live site that URL is
+  `skcena.github.io/core/gst.js`, which 404s. The GST core never
+  loaded, so the page's startup code died at the first use of it and
+  no tab, language select, or prompt was ever wired up. The local
+  tests never caught it because `../core/gst.js` exists on disk.
+- Fix: the Site now loads `site/gst-core.js` — a copy of
+  `core/gst.js` inside `site/`. `tools/sync-site-core.js` refreshes
+  the copy, and `views.test.js` fails if the two files ever drift
+  apart. The service worker cache list was fixed the same way
+  (cache `udyamsetu-site-v5`).
+- Rule: the Site must never load anything from outside `site/` —
+  Pages only serves that folder.
 
 ## Phase 1.3 — CA pilot
 

@@ -122,6 +122,37 @@ ok('new home/ftu/guide keys exist in English + Hindi',
   ['tabHome', 'tabAbout', 'quickBill', 'ftuTitle', 'guideStep1', 'langPromptTitle', 'apkBadge', 'aboutTitle']
     .every((k) => i18n.STRINGS.en[k] && i18n.STRINGS.hi[k]));
 
+// --- 7b. Live-site fix: GST core lives inside site/ (Pages serves only site/) ---
+const coreGst = fs.readFileSync(path.join(__dirname, '..', 'core', 'gst.js'), 'utf8');
+const siteGst = fs.readFileSync(path.join(__dirname, 'gst-core.js'), 'utf8');
+eq('site/gst-core.js is byte-identical to core/gst.js', siteGst, coreGst);
+ok('index.html loads gst-core.js from inside site/ (no ../core path)',
+  /<script src="gst-core\.js" defer><\/script>/.test(html) && !/\.\.\/core\/gst\.js/.test(html));
+const swJs = fs.readFileSync(path.join(__dirname, 'sw.js'), 'utf8');
+ok('service worker caches ./gst-core.js (no ../core path)',
+  /'\.\/gst-core\.js'/.test(swJs) && !/\.\.\/core\/gst\.js/.test(swJs));
+
+// --- 7c. Dark / Light theme ---
+ok('theme toggle button exists in the header',
+  /id="themeToggle"/.test(html) && /class="theme-toggle"/.test(html));
+ok('head script sets data-theme before paint (saved choice, else phone setting)',
+  /localStorage\.getItem\('udyamsetu\.theme'\)/.test(html)
+  && /prefers-color-scheme: dark/.test(html)
+  && /setAttribute\('data-theme'/.test(html));
+ok('CSS defines a dark theme (html[data-theme="dark"]) with dark bg + card',
+  /html\[data-theme="dark"\]\s*\{[^}]*--bg:\s*#0b1220/.test(css)
+  && /html\[data-theme="dark"\]\s*\{[^}]*--card:\s*#1e293b/.test(css));
+ok('app.js wires the theme toggle and saves the choice',
+  /THEME_KEY = 'udyamsetu\.theme'/.test(appJs)
+  && /themeToggle/.test(appJs)
+  && /function setTheme/.test(appJs)
+  && /localStorage\.setItem\(THEME_KEY/.test(appJs));
+ok('theme toggle shows moon in light mode and sun in dark mode (CSS)',
+  /\.theme-toggle \.icon-sun \{ display: none; \}/.test(css)
+  && /html\[data-theme="dark"\] \.theme-toggle \.icon-sun \{ display: block; \}/.test(css));
+ok('print output is forced light even in dark mode',
+  /@media print \{[\s\S]*html\[data-theme="dark"\] \{ --bg: #fff/.test(css));
+
 // --- 8. SPEC documents the views ---
 ok('SPEC has a Web views section', /## Web views/.test(spec));
 ok('SPEC Web views covers mobile + desktop + acceptance', /Mobile view/.test(spec) && /Desktop view/.test(spec) && /Acceptance/.test(spec));

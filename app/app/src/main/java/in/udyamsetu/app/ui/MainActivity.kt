@@ -11,6 +11,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -35,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import `in`.udyamsetu.app.R
+import `in`.udyamsetu.app.ui.theme.UdyamSetuTheme
 import java.util.Locale
 
 object Routes {
@@ -74,8 +75,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Saved theme, read synchronously so the first frame already uses
+        // it (see AppViewModel.setThemeMode). Default: System.
+        val savedTheme = getSharedPreferences("udyamsetu_theme", Context.MODE_PRIVATE)
+            .getString("theme_mode", "system") ?: "system"
+        vm.applyThemeMode(savedTheme)
         setContent {
-            MaterialTheme {
+            val themeMode by vm.themeMode.collectAsState()
+            val darkTheme = when (themeMode) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme()
+            }
+            UdyamSetuTheme(darkTheme = darkTheme) {
                 val langChosen by vm.langChosen.collectAsState()
                 val nav = rememberNavController()
                 val start = if (langChosen) Routes.HOME else Routes.LANGUAGE
