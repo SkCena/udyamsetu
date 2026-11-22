@@ -58,6 +58,15 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    // Navigation Compose: every screen takes a NavHostController and
+    // MainActivity builds a NavHost — the dependency was missing, so
+    // compileDebugKotlin failed on every navigation import. See CI run #5.
+    implementation(libs.androidx.navigation.compose)
+    // by viewModels() (MainActivity) lives in activity-ktx, and
+    // AndroidViewModel / viewModelScope (AppViewModel) in
+    // lifecycle-viewmodel-ktx — both were only transitive before.
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     // The XML Activity theme (res/values/themes.xml) uses
     // Theme.Material3.DayNight.NoActionBar + colorPrimary attrs — those are
     // resources of the Material Components library, not of Compose material3

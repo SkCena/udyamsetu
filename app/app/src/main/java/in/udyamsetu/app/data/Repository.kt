@@ -16,6 +16,7 @@ import `in`.udyamsetu.app.logic.applyInvoiceToStock
 import `in`.udyamsetu.app.logic.decodeLines
 import `in`.udyamsetu.app.logic.encodeLines
 import `in`.udyamsetu.app.logic.negateTotals
+import `in`.udyamsetu.app.logic.toInput
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

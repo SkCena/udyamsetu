@@ -489,6 +489,21 @@ ads; user data never goes to a central server.
   Compose material3, which is Kotlin-only and ships no XML resources.
   Fixed by adding `com.google.android.material:material:1.12.0` to the
   version catalog + app dependencies; nothing else changed.
+- **CI build #5 failed on missing dependencies (fixed 2026-11-22):**
+  `:app:compileDebugKotlin` failed — every `androidx.navigation.*`
+  import was unresolved because `navigation-compose` was never declared
+  (the NavHost + 12 screens used it, but the catalog had no entry).
+  Two more errors came out of the same audit: `Repository.kt` used the
+  `BillLine.toInput` extension without importing it, and `BigButton`
+  had `onClick` before the defaulted `enabled` param, so the trailing
+  lambda at every call site had nowhere to bind. The audit also caught
+  a manifest bug — the launcher activity was declared as
+  `.MainActivity` while the class lives in `.ui.MainActivity`, so the
+  app would have crashed on launch even after a green build. Fixed by
+  adding `navigation-compose:2.8.5`, `activity-ktx:1.9.0` (for
+  `by viewModels()`) and `lifecycle-viewmodel-ktx:2.8.5` (for
+  `AndroidViewModel` / `viewModelScope`), the missing import, the
+  `BigButton` parameter order, and the manifest activity name.
 - **Gradle wrapper jar:** `gradle-wrapper.jar` is a binary, so it
   can't be pushed through the GitHub API either — that's why CI runs
   the `gradle` command (8.7, installed by setup-gradle) instead of

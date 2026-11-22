@@ -44,7 +44,11 @@ fun HintText(text: String) {
 }
 
 @Composable
-fun BigButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+// NOTE: onClick is the LAST parameter on purpose — every call site uses
+// the trailing-lambda form BigButton("...") { ... }, and a trailing lambda
+// only binds to the last parameter. (With `enabled` last, the lambda had
+// nowhere to go and compileDebugKotlin failed on every BigButton call.)
+fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = enabled,
