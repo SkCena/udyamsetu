@@ -449,6 +449,13 @@ ads; user data never goes to a central server.
   build route. The workflow file itself can't be pushed through the
   API (no workflow scope) — it has to be added through the GitHub
   website the first time.
+- **CI build #1 failed on the app theme (fixed 2026-11-22):**
+  `:app:processDebugResources` failed — `Theme.Material3.DayNight.NoActionBar`
+  and the `colorPrimary` attrs were not found. The theme in `themes.xml`
+  comes from the Material Components library, but the project only had
+  Compose material3, which is Kotlin-only and ships no XML resources.
+  Fixed by adding `com.google.android.material:material:1.12.0` to the
+  version catalog + app dependencies; nothing else changed.
 - **Gradle wrapper jar:** `gradle-wrapper.jar` is a binary, so it
   can't be pushed through the GitHub API either — that's why CI runs
   the `gradle` command (8.7, installed by setup-gradle) instead of

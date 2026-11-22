@@ -58,6 +58,12 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    // The XML Activity theme (res/values/themes.xml) uses
+    // Theme.Material3.DayNight.NoActionBar + colorPrimary attrs — those are
+    // resources of the Material Components library, not of Compose material3
+    // (Compose material3 is Kotlin-only and ships no XML resources). Without
+    // this dependency the resource linker fails on the theme. See CI run #1.
+    implementation(libs.material)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
