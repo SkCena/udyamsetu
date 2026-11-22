@@ -1,0 +1,53 @@
+# UdyamSetu — deploy the Site (site/) to GitHub Pages.
+#
+# HOW TO ADD IT (first time only): this file CANNOT be pushed through the
+# GitHub API — the API token has no workflow scope. Add it through the
+# GitHub website: repo -> Add file -> Create new file ->
+# .github/workflows/pages.yml -> paste this file -> Commit.
+# After that, later edits can be pushed through the API like any file.
+#
+# Also turn Pages on once, in the repo settings:
+# Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+# The Site then lives at https://skcena.github.io/udyamsetu/
+#
+# What it deploys: only the static files in site/ — no server, no build
+# step, no secrets. The app/ code is NOT part of the Pages deploy.
+name: Deploy Site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+# Pages deploy needs these permissions; nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; a newer push cancels the older one.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Upload Site files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
