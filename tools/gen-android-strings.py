@@ -87,6 +87,10 @@ def parse_strings(text: str) -> dict:
 
 def android_value(value: str) -> str:
     # Android strings.xml: escape XML, escape ' and " for the aapt parser.
+    # Bare '%' breaks aapt ("Multiple substitutions specified in non-positional
+    # format") — escape it as '%%', but keep real format specifiers (%s, %d,
+    # %1$s ...) untouched so formatted strings still work.
+    value = re.sub(r"%(?![sdif]|\d+\$[sdif])", "%%", value)
     return escape(value).replace("'", "\\'").replace('"', '\\"')
 
 
