@@ -1,11 +1,12 @@
 // UdyamSetu — More. Sections, not a pile of buttons: Tools, Business,
 // App. Theme = Light/Dark/System + five premium colour schemes (no
 // green). Star prompt here too. Smooth on low-end phones: no heavy
-// effects — items fade/slide in once via animateItem, the star card
-// shrinks away on dismiss, and taps get the standard Material ripple.
+// effects — plain LazyColumn items, the star card shrinks away on
+// dismiss, and taps get the standard Material ripple. (animateItem was
+// tried here and removed — LazyListScope.item() takes no modifier, so
+// it cannot compile; no animation is better than a broken one.)
 package `in`.udyamsetu.app.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -76,16 +77,15 @@ private fun MoreRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
     val themeMode by vm.themeMode.collectAsState()
     val themeScheme by vm.themeScheme.collectAsState()
     LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-        item(modifier = Modifier.animateItem()) {
+        item() {
             SectionTitle(stringResource(R.string.tab_more))
         }
-        item(modifier = Modifier.animateItem()) {
+        item() {
             Text(
                 text = stringResource(R.string.more_tools),
                 fontSize = 14.sp,
@@ -94,11 +94,11 @@ fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
             )
         }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Calculate, stringResource(R.string.tab_calculator)) { nav.navigate(Routes.CALCULATOR) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Calculate, stringResource(R.string.tab_basic_calc)) { nav.navigate(Routes.BASIC_CALC) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.MenuBook, stringResource(R.string.tab_guide)) { nav.navigate(Routes.GUIDE) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Backup, stringResource(R.string.tab_backup)) { nav.navigate(Routes.BACKUP) } }
-        item(modifier = Modifier.animateItem()) {
+        item() { MoreRow(Icons.Filled.Calculate, stringResource(R.string.tab_calculator)) { nav.navigate(Routes.CALCULATOR) } }
+        item() { MoreRow(Icons.Filled.Calculate, stringResource(R.string.tab_basic_calc)) { nav.navigate(Routes.BASIC_CALC) } }
+        item() { MoreRow(Icons.Filled.MenuBook, stringResource(R.string.tab_guide)) { nav.navigate(Routes.GUIDE) } }
+        item() { MoreRow(Icons.Filled.Backup, stringResource(R.string.tab_backup)) { nav.navigate(Routes.BACKUP) } }
+        item() {
             Text(
                 text = stringResource(R.string.more_business),
                 fontSize = 14.sp,
@@ -107,11 +107,11 @@ fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )
         }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Settings, stringResource(R.string.tab_setup)) { nav.navigate(Routes.SETUP) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Receipt, stringResource(R.string.tab_gst)) { nav.navigate(Routes.GST) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Work, stringResource(R.string.tab_payroll)) { nav.navigate(Routes.PAYROLL) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Assessment, stringResource(R.string.tab_reports)) { nav.navigate(Routes.REPORTS) } }
-        item(modifier = Modifier.animateItem()) {
+        item() { MoreRow(Icons.Filled.Settings, stringResource(R.string.tab_setup)) { nav.navigate(Routes.SETUP) } }
+        item() { MoreRow(Icons.Filled.Receipt, stringResource(R.string.tab_gst)) { nav.navigate(Routes.GST) } }
+        item() { MoreRow(Icons.Filled.Work, stringResource(R.string.tab_payroll)) { nav.navigate(Routes.PAYROLL) } }
+        item() { MoreRow(Icons.Filled.Assessment, stringResource(R.string.tab_reports)) { nav.navigate(Routes.REPORTS) } }
+        item() {
             Text(
                 text = stringResource(R.string.more_app),
                 fontSize = 14.sp,
@@ -120,13 +120,13 @@ fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )
         }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Language, stringResource(R.string.lang_prompt_title)) { nav.navigate(Routes.LANGUAGE) } }
-        item(modifier = Modifier.animateItem()) { MoreRow(Icons.Filled.Info, stringResource(R.string.tab_about)) { nav.navigate(Routes.ABOUT) } }
+        item() { MoreRow(Icons.Filled.Language, stringResource(R.string.lang_prompt_title)) { nav.navigate(Routes.LANGUAGE) } }
+        item() { MoreRow(Icons.Filled.Info, stringResource(R.string.tab_about)) { nav.navigate(Routes.ABOUT) } }
         // Star prompt (same card as Home — dismissing it here hides it
         // everywhere; the choice is saved in AppViewModel).
-        item(modifier = Modifier.animateItem()) { StarCard(vm) }
+        item() { StarCard(vm) }
         // Theme: Light / Dark / System + colour scheme.
-        item(modifier = Modifier.animateItem()) {
+        item() {
             SectionTitle(stringResource(R.string.theme_title))
             Text(
                 text = stringResource(R.string.theme_mode_title),
@@ -196,7 +196,7 @@ fun MoreScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         }
-        item(modifier = Modifier.animateItem()) {
+        item() {
             Text(
                 text = stringResource(R.string.credit),
                 fontSize = 13.sp,

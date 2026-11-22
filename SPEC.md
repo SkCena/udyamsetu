@@ -265,6 +265,12 @@ docs/                -> Device test cards + notes
 - Host tests green: app logic 104/104, GST core 111/111, Site 958/958,
   smoke PASS; all XML parses fine; all string/layout references
   resolve.
+- MoreScreen fix (CI run #12): `item(modifier = Modifier.animateItem())`
+  does not compile — `LazyListScope.item()` takes no modifier, and
+  `Modifier.animateItem()` only works on the content's own Modifier
+  inside the item. Removed it; the More list is plain items now (no
+  animation — smoothness here comes from the light list + ripple, not
+  from item animations).
 - Still open: the APK hasn't built in CI yet (the workflow isn't in
   the repo — add it through the website first). Device test card:
   `docs/DEVICE-TEST-app.md`.
