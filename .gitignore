@@ -1,0 +1,20 @@
+# UdyamSetu — never commit these.
+# Local machine files
+local.properties
+*.iml
+.idea/
+.gradle/
+build/
+app/build/
+app/app/build/
+# Signing / secrets — these must never reach the repo
+*.keystore
+*.jks
+*.pem
+*.key
+google-services.json
+.env
+*.env
+# OS files
+.DS_Store
+Thumbs.db

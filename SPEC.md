@@ -1,427 +1,470 @@
-# Spec: UdyamSetu — V1 (Phase 1.1: Setup + Billing; Phase 1.2: Party, Stock, GST, Payroll, Reports)
+# Spec: UdyamSetu — V1
 
-## Objective
-UdyamSetu is a free, mobile-first business / GST / accounting product for small
-Indian shops. One product, two surfaces: a static local-first Site (PWA) and an
-Android app. No server, no account, no paywall. Data lives on the user's device.
+## What this is
 
-V1 Phase 1.1 covers: business **Setup** and **Billing** (invoice create,
-GST math, PDF, share). Phase 1.2 adds: **Party/Udhaar ledger, Inventory,
-GST reports + e-invoice/e-way JSON, Payroll-lite, Reports + export**.
-Everything else from the plan is Deferred, not dropped — see
-"Deferred with reason" below.
+UdyamSetu is a free, mobile-first business / GST / accounting product for
+small Indian shops. One product, two surfaces: a static local-first Site
+(PWA) and an Android app. No server, no account, no paywall. Data lives
+on the user's device.
 
-**Goal LOCK (2026-11-22, user): EACH AND EVERY paid feature free.**
-Har paid cheez free mile, taaki user ko realise ho ki jis cheez ka wo paid
-de raha tha, wo yahan free hai. Iska poora 37-row checklist APK REA report
-`~/workspace/research_notes/vyapar-zoho-apk-rea-20261122/report.md` §5 me hai;
-har row ka UdyamSetu jawab §8 me hai. Koi feature bina reason ke "baad me"
-nahi chhoda gaya — har deferred feature ke saamne kyun likha hai.
+The idea is simple: every paid feature in the usual billing apps should
+be free here. A 37-row checklist of those paid features (from Vyapar,
+Zoho Books and Tally) drives the roadmap — every row is either done,
+planned with a reason, or marked as something this product will never
+do (like a paywall). Nothing is left as "later" without saying why.
 
-## Language LOCK (2026-11-22, user)
-Primary language is **ENGLISH** (default). Other Indian languages switch via
-the language tab in the header: Hindi, Bengali, Telugu, Marathi, Tamil,
-Gujarati, Punjabi, Odia, Urdu. All strings live in `site/i18n.js` — one dict
-per language, English fallback for any missing key. Add a language by adding
-one dict, no code change elsewhere. The Android app MUST use the same keys
-and structure when it is built. Known limit (Phase 1.2): Phase 1.2 form field
-labels are Hindi-only static text for now — chrome (tabs/titles/buttons/
-messages/hints) switches fully; field-label translation is the next i18n step.
+## Who it's for
 
-User: a small shop owner in India, phone-first, often offline, Hindi-first.
-Success: the shop can set up in 5 minutes and make a correct GST invoice
-offline, print/share it as PDF, and the totals match hand calculation to the
-paise.
+A small shop owner in India, phone-first, often offline. The shop
+should be able to set up in 5 minutes, make a correct GST invoice
+offline, print or share it as a PDF, and have the totals match a
+hand calculation to the paise.
 
-## Site-complete + GitHub-everywhere LOCK (2026-11-22, user)
-- **Site me SAB hoga** — koi feature sirf APK me nahi hoga. Jo kaam browser
-  me ho sakta hai, wo Site par hoga.
-- Kuch options sirf APK me ho sakte hain, kyunki browser me nahi ho sakte
-  (barcode scan, home widget, background sync / Drive auto-backup). Wo
-  options Site par saaf **"APK chahiye"** badge ke saath marked hain, aur
-  unke saath APK download link hai (`https://github.com/SkCena/udyamsetu/releases`
-  — pehla APK release aane par wahan milega; koi fake direct `.apk` URL nahi hai).
-- **GitHub link har jagah hai** — Site ke header, footer, Home card, About
-  section (aur App me About me bhi hoga jab App banega). Repo URL:
-  `https://github.com/SkCena/udyamsetu`. Repo abhi **PRIVATE** hai, isliye ye
-  link tabhi khulega jab user repo ko public karega — link phir bhi daala
-  hai, aur About me ye baat likhi hai.
+## Languages
 
-Source plan: `~/workspace/research_notes/vyapar-tally-zoho-rea-20261122/plan-and-name.md`
-Source REA: `~/workspace/research_notes/vyapar-tally-zoho-rea-20261122/report.md`
+The primary language is **English** (default). Other Indian languages
+switch from the language tab in the header: Hindi, Bengali, Telugu,
+Marathi, Tamil, Gujarati, Punjabi, Odia, Urdu. All strings live in
+`site/i18n.js` — one dictionary per language, with English as the
+fallback for any missing key. Adding a language means adding one
+dictionary, nothing else. The Android app uses the same keys and
+structure.
 
-## Assumptions (stated, not silent)
-1. User gave full permission for internet lookup / fetch / download for this
-   work (2026-11-22). Official docs / APKs may be fetched freely.
-2. Repo is PRIVATE on SkCena (`SkCena/udyamsetu`) until the user says publish.
-   GitHub Pages is therefore NOT public yet — the Site is built as a static
-   PWA preview in this repo, Pages decision comes later from the user.
-3. Android package `in.udyamsetu.app`, minSdk 29, Kotlin + Jetpack Compose,
-   Room/SQLite, offline-first. Local Gradle is blocked on this VM (daemon IPC);
-   the APK is built by GitHub Actions only.
-4. GST rules are taken from the plan/REA notes; any rate/threshold the plan
-   marks "not verified" stays "not verified" here and is NOT guessed.
-5. No direct GST portal filing in Phase 1.1. Invoices export as JSON/PDF for
-   the user to upload on the portal.
+Known limit: the Phase 1.2 form field labels are still Hindi-only
+static text — the tabs, titles, buttons, messages and hints switch
+fully, the field labels are the next i18n step.
 
-## Tech Stack
-- Site: static HTML/CSS/JS, no framework, no build step. Storage: IndexedDB
-  (localStorage fallback). PDF: print CSS (A4 + 80mm thermal). PWA manifest +
-  service worker (cache-first, offline).
-- App: Kotlin 2.0.21, Jetpack Compose (BOM 2024.09.00), Room 2.6.1,
-  minSdk 29, targetSdk 34, Gradle 8.7, AGP 8.5.2. JDK 17 in CI.
-  (Phase 2 started 2026-11-22 on the user's yes — see Risks; the Site
-  carried Phase 1.2 alone until then.)
-- Shared core: `core/` — GST math + data model, implemented twice from the
-  same spec: `core/gst.js` (Site) and `core/gst.kt` (App). Both must pass the
-  same test vectors in `core/gst-test-vectors.json`. All money in integer
-  paise — never float rupees.
-- i18n: `site/i18n.js` — SUPPORTED_LANGS (10) + STRINGS per language.
-  `t(key, lang)` falls back to English, then to the key. Language is stored
-  in localStorage (`udyamsetu.lang`).
-- Classic-script rule (learned 2026-11-22, see Risks): all Site scripts are
-  classic scripts sharing ONE global lexical scope — top-level `const`/`let`/
-  `function` names MUST be unique across files. Each module file therefore
-  uses a file-specific top-level name (e.g. `partyApi`, `invApi`,
-  `gstRepApi`) while the public `window.UdyamSetu.*` names stay stable.
+## Site and app — everything on the Site, GitHub everywhere
+
+- **Everything is on the Site.** No feature lives only in the APK. If
+  something can work in a browser, it works on the Site.
+- A few things can only work in the app, because a browser can't do
+  them (barcode scan, home widget, background sync / Drive auto-backup).
+  Those are marked clearly on the Site with an **"APK chahiye"** badge,
+  with a link to the APK download
+  (`https://github.com/SkCena/udyamsetu/releases` — the first APK
+  release will appear there; there is no fake direct `.apk` link).
+- **The GitHub link is everywhere** — the Site header, footer, Home
+  card and About section, and the app's About screen. The repo is
+  public at `https://github.com/SkCena/udyamsetu`.
+
+## Assumptions
+
+1. The repo is public at `SkCena/udyamsetu`. The Site deploys to
+   GitHub Pages from `site/` (`.github/workflows/pages.yml`).
+2. Android package `in.udyamsetu.app`, minSdk 29, Kotlin + Jetpack
+   Compose, Room/SQLite, offline-first. The APK builds in GitHub
+   Actions only — local Gradle doesn't run on the dev machine (the
+   daemon never answers), so CI is the only build route.
+3. GST rules come from the plan and comparison notes. Any rate or
+   threshold marked "not verified" there stays "not verified" here —
+   nothing is guessed.
+4. No direct GST portal filing in Phase 1. The user exports JSON/PDF
+   and uploads it on the portal themselves.
+
+## Tech stack
+
+- **Site:** static HTML/CSS/JS, no framework, no build step. Storage:
+  IndexedDB (localStorage fallback). PDF: print CSS (A4 + 80mm
+  thermal). PWA manifest + service worker (cache-first, offline).
+- **App:** Kotlin 2.0.21, Jetpack Compose (BOM 2024.09.00), Room
+  2.6.1, minSdk 29, targetSdk 34, Gradle 8.7, AGP 8.5.2. JDK 17 in CI.
+- **Shared core:** `core/` — GST maths + data model, written twice
+  from the same spec: `core/gst.js` (Site) and `core/gst.kt` (App).
+  Both must pass the same test vectors in
+  `core/gst-test-vectors.json`. All money is integer paise — never
+  float rupees.
+- **i18n:** `site/i18n.js` — 10 languages, `t(key, lang)` falls back
+  to English, then to the key. The language is stored in localStorage
+  (`udyamsetu.lang`).
+- **Classic-script rule (learned the hard way):** all Site scripts are
+  classic scripts sharing one global scope, so top-level `const` /
+  `let` / `function` names must be unique across files. Each module
+  file uses a file-specific top-level name (for example `partyApi`,
+  `invApi`, `gstRepApi`) while the public `window.UdyamSetu.*` names
+  stay the same. Never add a top-level name without checking the
+  other scripts first.
 
 ## Commands
-```
-Site tests:   node core/gst.test.js            (114 tests)
-              node site/app.test.js            (78)
-              node site/party-inventory.test.js (87)
-              node site/gst-einvoice.test.js    (103)
-              node site/payroll-reports.test.js (82)
-              node site/integration.test.js     (53)
-              node site/i18n.test.js            (33)
-              node site/views.test.js           (48 — mobile/desktop views, Home, FTU,
-                                                 language prompt, APK markers, GitHub links)
-              Total: 598 tests, all green (2026-11-22)
-Browser load smoke: node /tmp/udyamsetu-smoke.js  (all 12 scripts load in
-  order, DOMContentLoaded handlers run, all 5 Phase 1.2 tabs render)
-Kotlin tests: kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar && java -jar /tmp/gst-test.jar
-App logic:    kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt app/app/src/main/java/in/udyamsetu/app/logic/*.kt app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt -include-runtime -d /tmp/udyamsetu-logic-test.jar && java -jar /tmp/udyamsetu-logic-test.jar   (32 tests)
-App CI:       cd app && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug   (GitHub Actions only; local Gradle is blocked on this VM — "Could not receive a message from the daemon", re-verified 2026-11-22)
+
+```bash
+# Site tests — 598 tests, all green
+node core/gst.test.js            # 114
+node site/app.test.js            # 78
+node site/party-inventory.test.js # 87
+node site/gst-einvoice.test.js   # 103
+node site/payroll-reports.test.js # 82
+node site/integration.test.js    # 53
+node site/i18n.test.js           # 33
+node site/views.test.js          # 48 — mobile/desktop views, Home, FTU,
+                                 # language prompt, APK markers, GitHub links
+
+# Browser load smoke — all 12 scripts load in order, handlers run,
+# all 5 Phase 1.2 tabs render
+node /tmp/udyamsetu-smoke.js
+
+# Kotlin core tests
+kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar
+java -jar /tmp/gst-test.jar   # 111 tests
+
+# App logic tests (JDK 17 + kotlinc, no Android SDK needed) — 32 tests
+kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt \
+  app/app/src/main/java/in/udyamsetu/app/logic/*.kt \
+  app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt \
+  -include-runtime -d /tmp/udyamsetu-logic-test.jar
+java -jar /tmp/udyamsetu-logic-test.jar
+
+# App CI (GitHub Actions only — local Gradle is blocked on this machine)
+# CI runs: gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+# (from the app/ directory; the Gradle project lives in app/).
+# Note: CI uses the `gradle` command (8.7, installed by setup-gradle),
+# not ./gradlew — gradle-wrapper.jar is a binary and can't be pushed
+# through the GitHub API, so it isn't in the repo.
 ```
 
-## Project Structure
-```
-README.md            -> What this is, how to run, what is NOT done yet
-SPEC.md              -> This file (V1, Phase 1.1)
+## Project structure
+
+```text
+README.md            -> What this is, how to run it, what isn't done yet
+SPEC.md              -> This file
 CAPABILITY-MAP.md    -> Module ids + build order
 LICENSE              -> MIT
 tasks/plan.md        -> Implementation plan
 tasks/todo.md        -> Task checklist
-core/                -> Shared GST math + data model (js + kt + test vectors)
-  gst.js / gst.kt / gst-test-vectors.json / gst.test.js / GstTest.kt
+core/                -> Shared GST maths + data model (js + kt + test vectors)
 site/                -> Static PWA (index.html, app.js, styles.css, manifest.json, sw.js)
 app/                 -> Android Gradle project (package in.udyamsetu.app)
-  build.gradle.kts, settings.gradle.kts, gradle.properties, gradlew
-  app/build.gradle.kts, app/src/main/...
-.github/workflows/build-apk.yml  -> CI (added via web UI; API token has no workflow scope)
+.github/workflows/build-apk.yml  -> CI (added through the GitHub website;
+                                         the API can't push workflow files)
+.github/workflows/pages.yml      -> GitHub Pages deploy for site/
 docs/                -> Device test cards + notes
 ```
 
-## Code Style
-- Paise everywhere: `amountPaise: Int/Long`. Format only at display edge.
-- Names: business words in plain English (`Invoice`, `Party`, `Item`,
-  `taxablePaise`, `cgstPaise`). No Hinglish in code identifiers.
-- One function, one job. Pure functions for money math (no I/O inside).
+## Code style
+
+- Paise everywhere: `amountPaise: Int/Long`. Format only at the
+  display edge.
+- Names are plain business English in code (`Invoice`, `Party`,
+  `Item`, `taxablePaise`, `cgstPaise`). No Hinglish in identifiers.
+- One function, one job. Money maths is pure functions (no I/O
+  inside).
 - Site JS: no framework, no `eval`, no remote scripts. All data local.
 
-## Testing Strategy
-- TDD: failing test first (vectors), then minimal code. Red-green-refactor.
-- Unit: GST math (both JS and Kotlin) against the shared vectors — every
+## Testing
+
+- Failing test first, then the smallest code that passes it.
+- GST maths (JS and Kotlin both) against the shared vectors — every
   slab, intra/inter-state split, discount-before-tax, round-off, GSTIN
   format + checksum, HSN validation, invoice-number series.
-- Site: node tests for logic; HTML checked by opening the file (no server
-  needed) — manual device check card in `docs/DEVICE-TEST-1.1.md`.
-- App: JVM unit tests for the same vectors; Compose UI is NOT claimed
-  verified until the user runs it on the phone (device-first rule).
-- Full suite runs before every push. A failing test blocks the push.
+- Site: node tests for logic; the page is checked by opening the file
+  (no server needed). The device test cards in `docs/` are what the
+  user runs on the phone.
+- App: JVM unit tests for the same vectors. The Compose UI counts as
+  verified only after the user runs it on a real phone.
+- The full suite runs before every push. A failing test blocks the push.
 
-## Boundaries
-- Always: run the full test suite before pushing; keep Site and App math
-  identical via the shared vectors; state what is headless-only vs
-  device-verified.
-- Ask first: adding a dependency, changing the data model, changing CI,
-  making anything public (repo, Pages, Release).
-- Never: commit secrets / credentials / GSTINs of real businesses; copy
-  proprietary code; claim a device pass without the user's phone verdict;
-  publish the repo or the Site publicly; bypass a paywall or licence check.
+## Rules for this repo
 
-## Success Criteria (Phase 1.1 — done, headless-verified)
-- [x] Setup saves business profile (name, optional GSTIN validated, logo
-      optional, UPI ID, invoice series prefix + next number) and survives reload.
-- [x] Billing creates GST and non-GST invoices; CGST+SGST split intra-state,
-      IGST inter-state; discount before tax; round-off to nearest rupee.
-- [x] All 20+ shared GST test vectors pass in BOTH JS and Kotlin.
-- [x] Invoice renders A4 + 80mm thermal PDF via print; WhatsApp share link
-      opens with invoice text.
-- [x] Credit note and debit note can be issued against an invoice.
-- [x] Site works fully offline after first load (PWA cache); App works fully
-      offline (Room local) — App pending (see Risks).
-- [ ] CI workflow file exists in repo history notes (added via web UI) and the
-      Android project compiles in CI — BLOCKED, Android work stopped.
-- [x] Device test card written for the user (exact steps, expected results).
+- Don't commit secrets, credentials, keystores, or any real
+  business's GSTIN. Test data uses made-up values
+  (like `22AAAAA0000A1ZC` and the phone number `9876543210`).
+- Don't copy proprietary code, text, assets or designs from other
+  apps. Features and flows can be studied and re-implemented from
+  scratch — that's how the comparison work was done.
+- Don't claim a device pass without a real phone verdict. Headless
+  test counts are not a device pass.
+- Don't bypass a paywall or licence check, and don't publish a
+  "CA-ready" claim until a real CA test passes.
+- Adding a dependency, changing the data model or changing CI is a
+  deliberate decision — say why in the commit.
 
-## Success Criteria (Phase 1.2 — done, headless-verified)
-- [x] Party/Udhaar ledger: party add, udhaar/payment entries with the
-      documented sign convention (positive = receivable), statement with
-      running balance, due reminders with WhatsApp text.
-- [x] Inventory: items (HSN/rate/unit/prices/reorder/godown), stock
-      movements, batches + expiry, low-stock + expiring alerts; bill save
-      auto-decrements stock for HSN/name-matched items.
-- [x] GST reports: GSTR-1 (B2B/B2CL/B2CS/CDNR) + GSTR-3B (ITC user-entered,
-      never guessed) summaries + portal-style JSON downloads (DRAFT);
-      2A/2B reconciliation from user-pasted portal JSON.
-- [x] e-invoice (NIC v1.03-style) + e-way bill JSON drafts from a saved
-      invoice; no filing, no credentials stored; SupTyp B2B/B2C by GSTIN.
-- [x] Payroll-lite: employees, attendance, pro-rata payslip, advance,
-      payslip print; PF/ESI/PT/TDS user-configured (default 0, no statutory
-      assumption).
-- [x] Reports + export: sales/purchase/expense/P&L/GST/stock/cash-flow
-      summaries; CSV + JSON bundle + Tally-compatible CSV labelled BETA
-      (NOT "CA-ready" — CA pilot pending).
-- [x] Language: English default; language tab switches Hindi + Bengali,
-      Telugu, Marathi, Tamil, Gujarati, Punjabi, Odia, Urdu (all visible
-      chrome keys translated; messages fall back to English).
-- [x] All 550 node tests green; browser load smoke green (12 scripts,
-      all tabs render); 16/16 files HTTP 200 over local http.
-- [ ] Device test card for Phase 1.2 written — see
-      `docs/DEVICE-TEST-1.2-site.md` (user runs it on the phone).
+## What is done
 
-## Success Criteria (Phase 2 — App scaffold + Phase 1 screens, 2026-11-22, headless-verified)
-- [x] Gradle project: `app/` (package `in.udyamsetu.app`, minSdk 29,
-      targetSdk 34, AGP 8.5.2, Kotlin 2.0.21, Gradle 8.7, version catalog),
-      manifest, adaptive launcher icon, Material3 theme.
-- [x] Shared core reused, not rewritten: `app/.../core/GstCore.kt` is
-      byte-identical to `core/gst.kt` (diff-verified); same test vectors.
-- [x] Pure logic modules (`logic/`): LinesCodec, PartyLogic, InventoryLogic,
-      GstReports, PayrollLogic, ReportsLogic — mirror the Site rules
-      (sign convention, cash-flow-only-real-cash, ITC user-entered, BETA Tally).
-- [x] Room: 11 entities + 5 DAOs matching the Site store collections;
-      Repository owns cross-table writes (bill save -> ledger + stock).
-- [x] Screens: Language-first, Home (4 Quick + stats + FTU + first-bill
-      guide + APK card + GitHub), Setup, Billing (draft hoisted in an
-      Activity-scoped ViewModel, preview before save, credit/debit note),
-      Bill List, Party (bill/payment from the party card), Stock, GST,
-      Payroll, Reports, More, About. Home widget (one tap -> New Bill).
-- [x] i18n: 115 strings x 10 languages generated from `site/i18n.js`
-      (`tools/gen-android-strings.py`, deduped, all XML parse OK);
-      language applied from launch via SharedPreferences + recreate.
-- [x] CI workflow `.github/workflows/build-apk.yml` written (Actions only;
-      must be added via the GitHub web UI the first time — API token has
-      no workflow scope). Gradle project lives in `app/`, so CI runs
-      with `working-directory: app`.
-- [x] Host tests green: app logic 32/32, GST core 111/111, Site 598/598,
-      smoke PASS; all XML parse OK; all R.string/R.layout refs resolve.
-- [ ] APK built in CI (workflow not yet in the repo — add via web UI first).
-- [ ] Device test card written — see `docs/DEVICE-TEST-app.md` (user runs
-      it on the phone; no device pass claimed).
-- [ ] iOS-future: business logic in shared core + `logic/` (pure Kotlin,
-      no Android APIs); UI separate. A future iOS surface reuses the core
-      + data model and builds only its own UI (Site PWA already runs on
-      iPhone Safari).
+### Phase 1.1 — Setup + Billing (Site)
 
-## Success Criteria (Site polish — Desktop view + REA structure, 2026-11-22, headless-verified)
-- [x] Desktop view: sidebar nav (240px) + 1180px content at >= 1024px;
-      mobile base CSS untouched (views.test.js proves it).
-- [x] Home view: 4 Quick buttons (Bill/Udhaar/Stock/Payment), today stats
-      (sale/udhaar/low-stock), FTU 3 questions, first-bill 3-step guide.
-- [x] Language-first prompt: first visit par language poochna, choice save
-      hote hi dobara nahi poochna (i18n.hasChosenLang/markLangChosen).
-- [x] Site-complete: sab features Site par; browser-impossible options
-      (barcode scan, home widget, background sync) "APK chahiye" badge +
-      APK download link (GitHub Releases, no fake .apk URL).
-- [x] GitHub link har jagah: header, footer, Home card, About
-      (`https://github.com/SkCena/udyamsetu` — private hai, public hone ke
-      baad hi khulega; About me ye likha hai).
-- [x] All 598 node tests green; browser load smoke green; 16/16 files HTTP 200.
-- [ ] Visual device check pending: 360px phone + 1280px desktop par khol
-      ke dekhna (user runs it on the phone/browser).
+- Setup saves the business profile (name, optional GSTIN validated,
+  logo optional, UPI ID, invoice series prefix + next number) and it
+  survives reload.
+- Billing makes GST and non-GST invoices: CGST+SGST split for
+  same-state sales, IGST for inter-state, discount before tax,
+  round-off to the nearest rupee.
+- All shared GST test vectors pass in both JS and Kotlin.
+- Invoices print A4 + 80mm thermal via print CSS; WhatsApp share
+  opens with the invoice text.
+- Credit notes and debit notes can be issued against an invoice.
+- The Site works fully offline after the first load (PWA cache).
 
-## Phase 1.3 — CA pilot (APK REA §8)
+### Phase 1.2 — Party, Stock, GST, Payroll, Reports (Site)
 
-Goal: jo "DRAFT / BETA" hai, use real CA se validate karke hi "ready" bolna.
-- [ ] GSTR-1/3B JSON + e-invoice/e-way JSON: ek real CA ke paas format check
-      karwana — portal ke format se match kare, tabhi "filing-ready" bolenge.
-      Usse pehle GSTR/e-invoice outputs **DRAFT** hi rahenge.
-- [ ] Tally-compatible CSV: ek real CA ke paas import test pass hona chahiye
-      — tabhi "CA-ready" bolenge. Usse pehle Tally CSV **BETA** hi rahega.
-- [ ] CA pilot ka result (pass/fail + kya badla) SPEC me likhna.
+- Party/Udhaar ledger: add a party, udhaar/payment entries with the
+  documented sign rule (positive = receivable), statement with running
+  balance, due reminders with WhatsApp text.
+- Inventory: items (HSN/rate/unit/prices/reorder/godown), stock
+  movements, batches + expiry, low-stock + expiring alerts; saving a
+  bill reduces stock for HSN/name-matched items.
+- GST reports: GSTR-1 (B2B/B2CL/B2CS/CDNR) + GSTR-3B (ITC entered by
+  the user, never guessed) summaries + portal-style JSON downloads
+  (DRAFT); 2A/2B reconciliation from pasted portal JSON.
+- e-invoice (NIC-style) + e-way bill JSON drafts from a saved invoice;
+  no filing, no credentials stored; B2B/B2C by GSTIN.
+- Payroll-lite: employees, attendance, pro-rata payslip, advance,
+  payslip print; PF/ESI/PT/TDS are user-configured (default 0, no
+  statutory rate assumed).
+- Reports + export: sales/purchase/expense/P&L/GST/stock/cash-flow
+  summaries; CSV + JSON bundle + Tally-compatible CSV labelled BETA
+  (not "CA-ready" — the CA pilot is still pending).
+- Language: English default; the tab switches Hindi, Bengali, Telugu,
+  Marathi, Tamil, Gujarati, Punjabi, Odia, Urdu (visible chrome is
+  translated; messages fall back to English).
+- 550 node tests green; browser load smoke green; 16/16 files HTTP 200
+  over a local server.
+- Device test card: `docs/DEVICE-TEST-1.2-site.md` (run on the phone).
 
-## Phase 2 — Android app + sync + deferred paid features (APK REA §8)
+### Phase 2 — Android app scaffold + screens
 
-Goal: wahi core, Site + Android app dono pe, ek hi data — aur §8 ke
-Phase-2 features sab free.
-- App: Kotlin + Jetpack Compose, Room/SQLite, offline-first, package
-  `in.udyamsetu.app`, minSdk 29. Build GitHub Actions se hi (local Gradle
-  blocked hai). CI green hone par hi APK ki baat hogi.
-- Sync: **2a** encrypted backup file (export/import — site ↔ app, WhatsApp /
-  Drive / pen-drive se); **2b** user ke apne Google Drive app-folder me
-  auto-backup. Central server nahi hoga.
-- Features (sab free): GSTR-9 annual; e-invoice/e-way via GSP (user ke
-  credentials se); multi-user/roles + multi-firm; POS billing; manufacturing
-  / BOM; loyalty points; online store catalogue → store; bulk WhatsApp /
-  marketing / greetings; fixed assets; Recycle Bin; payment gateway; TCS/TDS;
-  projects + timesheets; bank feeds (CSV import pehle, live feed baad me);
-  vendor/client portal share-link; budgets; recurring invoices/bills, price
-  lists, retainer/progress invoicing; multi-currency; custom-report builder;
-  barcode scan (CameraX); transaction locking + audit trail; invoice themes;
-  serial tracking.
-- Acceptance: 3-tap bill test (neeche Easy-UI plan) device pe pass ho.
+- Gradle project: `app/` (package `in.udyamsetu.app`, minSdk 29,
+  targetSdk 34, AGP 8.5.2, Kotlin 2.0.21, Gradle 8.7, version
+  catalog), manifest, adaptive launcher icon, Material3 theme.
+- Shared core reused, not rewritten: `app/.../core/GstCore.kt` is
+  byte-identical to `core/gst.kt` (checked with diff); same test
+  vectors.
+- Pure logic modules (`logic/`): LinesCodec, PartyLogic,
+  InventoryLogic, GstReports, PayrollLogic, ReportsLogic — the same
+  rules as the Site (sign rule, cash flow counts only real cash, ITC
+  entered by the user, Tally CSV is BETA).
+- Room: 11 entities + 5 DAOs matching the Site store collections;
+  the Repository owns cross-table writes (saving a bill writes the
+  ledger entry and the stock movements).
+- Screens: language first, Home (4 quick buttons + stats + 3
+  questions + first-bill guide + APK card + GitHub), Setup, Billing
+  (draft kept in an Activity-scoped ViewModel, preview before save,
+  credit/debit note), Bill List, Party (bill/payment from the party
+  card), Stock, GST, Payroll, Reports, More, About. Home widget (one
+  tap → New Bill).
+- i18n: 115 strings × 10 languages generated from `site/i18n.js`
+  (`tools/gen-android-strings.py`, deduped, all XML parses fine);
+  the language applies from launch.
+- CI workflow `.github/workflows/build-apk.yml` written (Actions
+  only; add it through the GitHub website the first time — the API
+  can't push workflow files). The Gradle project lives in `app/`, so
+  CI runs with `working-directory: app`.
+- Host tests green: app logic 32/32, GST core 111/111, Site 598/598,
+  smoke PASS; all XML parses fine; all string/layout references
+  resolve.
+- Still open: the APK hasn't built in CI yet (the workflow isn't in
+  the repo — add it through the website first). Device test card:
+  `docs/DEVICE-TEST-app.md`.
+- Built for the future: the business logic sits in the shared core +
+  `logic/` (pure Kotlin, no Android APIs) and the UI is separate, so a
+  future iOS version can reuse the core and the data model and only
+  build its own UI. The Site PWA already runs on iPhone Safari.
 
-## Phase 3 — AI insights, on-device pehle (APK REA §8)
+### Site polish — Desktop view + structure
 
-- Pehle simple on-device insight, bina cloud AI ke, phone pe calc: is
-  mahine ki sale pichhle mahine se kitni, kaunsa item chal raha hai, kaunsa
-  party udhaar me late hai.
-- Asli AI/forecasting (anomaly detection, forecasting) uske baad — uske liye
-  ya to bada data chahiye ya cloud cost, isliye Phase 3 me hi, jaldi me nahi.
-- Phase 3a Exam Prep + 3b Photo Editor isi phase ke alag modules hain
-  (plan-and-name.md §6 dekho).
+- Desktop view: sidebar nav (240px) + 1180px content at 1024px and
+  up; the mobile base CSS is untouched.
+- Home view: 4 quick buttons (Bill/Udhaar/Stock/Payment), today's
+  stats (sales / udhaar / low stock), 3 setup questions, a 3-step
+  first-bill guide.
+- Language-first prompt: the first visit asks for a language, and
+  once chosen it never asks again.
+- Site-complete: everything is on the Site; browser-impossible
+  options (barcode scan, home widget, background sync) carry an
+  "APK chahiye" badge + APK download link (GitHub Releases, no fake
+  `.apk` URL).
+- GitHub link everywhere: header, footer, Home card, About.
+- 598 node tests green; browser load smoke green; 16/16 files HTTP 200.
+- Still open: look at it on a real phone (360px) and a real desktop
+  (1280px) — the visual check is in the device test card.
 
-## Easy-UI plan (APK REA §6 + §8.1 — dono apps se seekh, apne tareeke se)
+## Phase 1.3 — CA pilot
 
-Competitor ka code/text/asset/design copy nahi hoga — sirf flow samajh ke
-apne tareeke se banayenge.
+Nothing marked "DRAFT" or "BETA" becomes "ready" until a real CA
+checks it:
 
-| Seekh | UdyamSetu me apne tareeke se | Phase |
+- GSTR-1/3B JSON + e-invoice/e-way JSON: a CA checks the format
+  against the portal's format. Only then is it called "filing-ready".
+  Until then the outputs stay DRAFT.
+- Tally-compatible CSV: a CA imports it into Tally and the import has
+  to pass. Only then is it called "CA-ready". Until then the CSV stays
+  BETA.
+- The CA pilot result (pass/fail + what changed) goes in this spec.
+
+## Phase 2 — Android app + sync + the rest of the paid features
+
+The same core, on the Site and in the Android app, with one shared
+data model — and the remaining paid features, all free.
+
+- **App:** Kotlin + Jetpack Compose, Room/SQLite, offline-first,
+  package `in.udyamsetu.app`, minSdk 29. Built by GitHub Actions
+  only. The APK comes up only after CI is green.
+- **Sync:** first an encrypted backup file (export/import — Site ↔
+  app, over WhatsApp / Drive / pen-drive); then auto-backup into the
+  user's own Google Drive app folder. No central server.
+- **Features (all free):** GSTR-9 annual return; e-invoice/e-way bill
+  through a GSP (with the user's own credentials); multi-user/roles +
+  multi-firm; POS billing; manufacturing / BOM; loyalty points;
+  online store (catalogue first, then the store); bulk WhatsApp /
+  marketing / greetings; fixed assets; Recycle Bin; payment gateway;
+  TCS/TDS; projects + timesheets; bank feeds (CSV import first, live
+  feed later); vendor/client portal (share-link); budgets; recurring
+  invoices/bills, price lists, retainer/progress invoicing;
+  multi-currency; custom-report builder; barcode scan (CameraX);
+  transaction locking + audit trail; invoice themes; serial tracking.
+- **Acceptance:** the 3-tap bill test (below) has to pass on a real
+  phone.
+
+## Phase 3 — Smart insights, on-device first
+
+- First, simple on-device insights, calculated on the phone with no
+  cloud involved: this month's sales vs last month, which item is
+  selling, which party is late on udhaar.
+- Real forecasting and anomaly detection come after that — they need
+  either a lot of data or cloud cost, so not in a hurry.
+- Phase 3a Exam Prep and 3b Photo Editor are separate modules in this
+  phase.
+
+## Easy UI — what the comparison taught us
+
+Competitor code, text, assets and designs were not copied — only the
+flows were studied, then built our own way.
+
+| Lesson | How UdyamSetu does it | Phase |
 |---|---|---|
-| Language pehle screen pe (Vyapar) | Pehle screen pe language poochna (English default, Hindi + 10 languages tab) — settings me chhupana nahi | **Site DONE** (first-visit prompt, `site/app.js` + `i18n.hasChosenLang`); App me bhi hoga Phase 2 |
-| FTU = 3 chhote sawaal | Setup me 3 sawaal (duk kaan type, GST hai ya nahi, kya bechte ho) — uske hisaab se dashboard | **Site DONE** (Home card, `localStorage udyamsetu.ftu`); App me bhi hoga Phase 2 |
-| Guided pehla bill + preview | Pehli baar bill banate waqt step guide + save se pehle preview (galti pakadne ka step) | **Site DONE (guide)** — Home pe 3-step guide card (pehle bill tak) + bill detail view = preview; **pre-save preview Phase 2 (App)** |
-| Quick Create (Zoho) | Home pe 4 bade button — Bill, Udhaar, Stock, Payment — ek tap me | **Site DONE** (Home quick-grid); App me bhi hoga Phase 2 |
-| Home widget (Zoho) | Android home widget — phone ke home se seedha bill, app khole bina | Phase 2 (App) |
-| Party se seedha bill (Zoho) | Party kholo → usi se bill / payment / udhaar (context se kaam, wapas jaake dhoondhna nahi) | 1.2 DONE (party se statement/payment); bill Phase 2 (App) |
-| Welcome screens me fayda, feature nahi (Zoho) | Onboarding me fayda likhna ("udhaar yaad rahega", "GST report ban jayega") — feature list nahi | Phase 2 (App) |
-| HSN offline (Vyapar) | HSN master app ke andar (offline lookup, type karte hi suggestion, internet nahi chahiye) | Phase 2 (App; Site me list) |
-| Shimmer + empty-state guide | Khaali screen pe guide ("+ dabake pehla bill banao"), blank screen nahi | 1.2 Site partial → Phase 2 (App) |
-| 3-tap bill target — acceptance test | Home → Party → Items → Preview/Share: bill 3 tap me shuru, 5 tap me share. Ye Phase 2 ka acceptance test hai | Phase 2 (App) |
+| Language on the first screen | Ask for the language first (English default, Hindi + 9 more in the tab) — don't hide it in settings | **Site done** (first-visit prompt); app too, Phase 2 |
+| Setup = 3 small questions | 3 questions (shop type, GST or not, what you sell) — the dashboard follows from the answers | **Site done** (Home card); app too, Phase 2 |
+| Guided first bill + preview | A step guide the first time you make a bill, and a preview before saving (so mistakes get caught) | **Site done (guide)** — 3-step guide card on Home + bill detail as preview; **pre-save preview in Phase 2 (app)** |
+| Quick create | 4 big buttons on Home — Bill, Udhaar, Stock, Payment — one tap each | **Site done** (Home quick-grid); app too, Phase 2 |
+| Home widget | Android home widget — new bill straight from the phone's home screen, without opening the app | Phase 2 (app) |
+| Bill straight from a party | Open a party → bill / payment / udhaar from there (no going back to search) | 1.2 done (statement/payment from party); bill in Phase 2 (app) |
+| Welcome screens sell the benefit, not the feature | Onboarding says what it does for you ("udhaar yaad rahega", "GST report ban jayega") — not a feature list | Phase 2 (app) |
+| HSN works offline | HSN master inside the app (type and it suggests, no internet needed) | Phase 2 (app; Site has the list) |
+| Shimmer + empty-state guide | An empty screen shows a guide ("press + to make your first bill"), never a blank screen | 1.2 Site partial → Phase 2 (app) |
+| 3-tap bill — acceptance test | Home → Party → Items → Preview/Share: the bill starts in 3 taps, shares in 5. This is the Phase 2 acceptance test | Phase 2 (app) |
 
-## Web views — Mobile + Desktop (Site, 2026-11-22)
+## Web views — Mobile + Desktop (Site)
 
-User lock: REA me jo sab nikla, wo achhe sahi structure se hamare me hoga,
-easy way. Web ke liye **alag mobile aur desktop view** honge — dono pe sab
-sahi; App ka bhi sab sahi hoga. Site ek hi HTML file hai (`site/index.html`);
-view sirf CSS se badalta hai — mobile ka base CSS kabhi nahi tootta.
+The Site is one HTML file (`site/index.html`); the view changes with
+CSS only — the mobile base CSS never breaks.
 
-### Mobile view (default, < 1024px — phone pehle)
-- Ek column: header upar, tabs neeche (wrap hote hain, 2–3 row me), phir
-  content card. Sab kuch ek haath se chale — bade button, bade input.
-- Quick actions: Home pe 4 bade button 2×2 grid me.
-- Forms: ek column; `.field-row` wale field 2 side-by-side (chhote).
+### Mobile view (default, under 1024px — phone first)
+
+- One column: header on top, tabs below (they wrap into 2–3 rows),
+  then the content card. Everything works one-handed — big buttons,
+  big inputs.
+- Quick actions: 4 big buttons in a 2×2 grid on Home.
+- Forms: one column; `.field-row` fields sit side by side (small).
 - Bill lines: 2-column grid (HSN/Qty, Price/Disc, GST).
-- Lists: ek column, ek ke neeche ek.
+- Lists: one column, one under the other.
 - Language prompt: full-screen overlay, 2-column language grid.
-- Base CSS (`styles.css`, `@media` se pehle) mobile ka hai — desktop rules
-  isme nahi hain. Mobile check: `node site/views.test.js` (base rules).
+- The base CSS (`styles.css`, before any `@media`) is the mobile
+  CSS — desktop rules aren't in it. Mobile check:
+  `node site/views.test.js` (base rules).
 
-### Desktop view (>= 1024px, `styles.css` me `@media (min-width: 1024px)`)
-- **Sidebar navigation:** tabs left side vertical column (240px, sticky),
-  content right side. Active tab teal background.
-- **Chauda content:** shell max-width 1180px; view padding 24px 28px.
-- **Multi-column jahan sahi ho:** Quick buttons 4 ek row me; invoice list
-  2 column; bill-line editor 5 column (Item bada, baaki chhote); Setup /
-  Party / Stock forms 2 column (field-row, msg, button full-width span);
-  totals right side (max-width 440px); FTU form 2 column; language prompt
-  card 520px, language grid 5 column.
-- Header/footer bhi 1180px tak chauda hota hai.
-- Print CSS (A4 / 80mm thermal) desktop/mobile dono se alag hai — usme
-  koi badlav nahi.
+### Desktop view (1024px and up, `@media (min-width: 1024px)`)
+
+- **Sidebar navigation:** tabs in a vertical column on the left
+  (240px, sticky), content on the right. The active tab is teal.
+- **Wider content:** shell max-width 1180px; view padding 24px 28px.
+- **Multi-column where it helps:** quick buttons 4 in a row; invoice
+  list 2 columns; bill-line editor 5 columns (item wide, the rest
+  small); Setup / Party / Stock forms 2 columns; totals on the right
+  (max-width 440px); setup-questions form 2 columns; language prompt
+  card 520px, language grid 5 columns.
+- Header and footer also go up to 1180px wide.
+- Print CSS (A4 / 80mm thermal) is separate from both — unchanged.
 
 ### Acceptance
-- Mobile (360px): saare 10 tabs dikhte hain, Home pe 4 Quick button 2×2,
-  form submit bina scroll kiye mushkil nahi, koi horizontal scroll nahi.
-- Desktop (1280px): sidebar left me, content right me; saare form/list
-  bina overlap ke dikhte hain; Quick button 4 ek row me.
-- Dono views me: Home stats, FTU, first-bill guide, APK card, GitHub links
-  (header/footer/Home/About) aur language prompt sahi kaam karte hain.
+
+- Mobile (360px): all 10 tabs visible, Home shows 4 quick buttons
+  2×2, forms submit without awkward scrolling, no horizontal scroll.
+- Desktop (1280px): sidebar on the left, content on the right; all
+  forms and lists show without overlap; quick buttons 4 in a row.
+- Both views: Home stats, setup questions, first-bill guide, APK
+  card, GitHub links (header/footer/Home/About) and the language
+  prompt all work.
 - Check: `node site/views.test.js` — 48 static checks (mobile base +
-  desktop rules + Home/FTU/prompt/APK/GitHub). Ye **static check** hai,
-  render test nahi.
-- Visual check (browser/device) abhi baki hai: 360px phone + 1280px
-  desktop par khol ke dekhna — user ke device test card me likha hai.
+  desktop rules + Home/FTU/prompt/APK/GitHub). This is a static
+  check, not a render test.
+- The visual check (browser/device) is still open: open it at 360px
+  on a phone and 1280px on a desktop — it's in the device test card.
 
-## Deferred with reason (APK REA §8, 2026-11-22 — dropped nahi, baad me)
+## Deferred, with reasons
 
-Har row: feature jo competitor apps me paid hai, UdyamSetu me free milega,
-par phase baad me hai — saamne kyun likha hai.
+Nothing here is dropped — it's just later, and each row says why.
 
-| Feature (paid elsewhere) | Phase | Kyun baad me |
+| Feature (paid elsewhere) | Phase | Why later |
 |---|---|---|
-| GSTR-9 annual return | Phase 2 | Saal-bhar ka data + HSN summary + portal format pehle Phase 1.3 me validate hona chahiye; GSTR-9 galat gaya to penalty ka risk hai, isliye jaldi me nahi |
-| e-invoice IRN + e-way bill via GSP | Phase 2 (GSP) | GSP integration ke liye user ke credentials + GSP ka kharcha/process CA se confirm karna baki hai; JSON DRAFT Phase 1.2 me done hai |
-| Multi-device sync + cloud backup | Phase 2a backup file → 2b Drive | Bina server ke realtime sync free me nahi hota; central server ₹0 me nahi chalega aur privacy risk hai. Pehle encrypted backup file (export/import), phir user ke apne Google Drive app-folder me backup |
-| Multi-user / roles / multi-firm | Phase 2 | Pehle single-user core ko device pe sahi karna hai; roles ke saath data-sharing + permission ka design Phase 2 ka kaam hai |
-| POS billing | Phase 2 | POS ka matlab tez counter billing + printer/scanner hardware; pehle normal billing ko device pe sahi karna hai, phir POS mode |
-| Manufacturing / BOM / job-work | Phase 2 | Chhoti dukaan ko pehle billing/stock chahiye; BOM sirf manufacturing wali dukaanon ka kaam hai, core ke baad |
-| Loyalty points | Phase 2 | Loyalty tabhi kaam karta hai jab party ledger + billing pakka ho; pehle wo done hai, ab loyalty Phase 2 me |
-| Online store (catalogue pehle) | Phase 2 | Online store ke liye payment + delivery + order ka flow chahiye; pehle catalogue/share (WhatsApp catalogue jaisa link), phir store |
-| Bulk WhatsApp + marketing tools + greetings | Phase 2 | Bulk WhatsApp ke liye WhatsApp Business API chahiye (cost + approval + spam risk); single-share abhi free hai, bulk baad me |
-| Fixed assets | Phase 2 | Asset register (kharid, basic depreciation, list) — core ke baad |
-| Recycle Bin (soft-delete, 30 din restore) | Phase 2 | Delete hua data wapas lane ka flow core ke baad |
-| Payment gateway (online payment collect + KYC) | Phase 2 | Gateway ke liye KYC + charges + user ke bank account ka flow hai; UPI QR pehle se free hai, gateway baad me |
-| TCS/TDS on invoices | Phase 2 (Payroll-lite ke saath) | Rates user/CA se confirm karke, invoice + payroll ke saath |
-| Projects + timesheets | Phase 2 | Core dukaan (billing/stock) pehle; project service-business ka alag flow hai |
-| Bank feeds | Phase 2 (CSV import pehle, live feed baad me) | Live feed ke liye bank partnership/API chahiye (cost + approval); CSV import se 80% kaam ho jata hai |
-| Vendor/client portal | Phase 2 (share-link) | Party ko uska statement/payment link bhej do, bina login ke |
-| Budgets | Phase 2 | Mahine ka kharcha target vs actual — core reports ke baad |
-| Recurring invoices/bills, price lists, retainer/progress invoicing | Phase 2 | Mahine ka bill auto-banao, price list per party, advance/retainer — core billing ke baad |
-| Multi-currency | Phase 2 | INR pehle; foreign currency party ke saath rate user daalega |
-| Custom-report builder | Phase 2 | Summaries Phase 1.2 me free hain; builder (khud report banao) Phase 2 me |
-| Barcode scan | Phase 2 (App) | Barcode generate Phase 1.2 (spec) me hai; scan CameraX se Phase 2 App me |
-| Transaction locking / audit trail | Phase 2 | Audit trail (kisne kab kya badla) + period-close lock — core ledger ke baad |
-| Premium invoice themes | Phase 2 | Saare reports Phase 1.2 me free hain; invoice themes apne design se, bina lock ke |
-| Serial number tracking | Phase 2 | Batch/expiry Phase 1.2 me done hai; serial item ke saath Phase 2 me |
-| AI insights / forecasting | Phase 3 (on-device pehle) | Asli AI/forecasting ke liye ya to bada data chahiye ya cloud cost; pehle simple on-device insight (is mahine ki sale pichhle se kitni, kaunsa item chal raha hai), AI baad me |
-| Exam Prep and Photo Editor modules | Phase 3a / 3b | Business core ke baad, alag modules |
-| Direct GST portal filing, realtime cloud sync | Never (by design) | Portal pe user khud upload karega; realtime sync ke liye central server ₹0 me nahi chalega |
-| Public repo / GitHub Pages publish | User decision, later | Repo PRIVATE hai jab tak user publish na kahe |
-| "CA-ready" claim | Phase 1.3 ke baad hi | Only after a real CA import test passes — Tally CSV tab tak BETA hi rahega |
+| GSTR-9 annual return | Phase 2 | Needs a full year of data + HSN summary + the portal format checked in Phase 1.3 first; a wrong GSTR-9 can mean a penalty, so no rushing |
+| e-invoice IRN + e-way bill via GSP | Phase 2 (GSP) | Needs the user's GSP credentials, and the GSP's cost/process still has to be confirmed with a CA; the JSON drafts are done in Phase 1.2 |
+| Multi-device sync + cloud backup | Phase 2a backup file → 2b Drive | Realtime sync without a server isn't free, and a central server can't run at ₹0 (and it's a privacy risk). First an encrypted backup file (export/import), then backup into the user's own Google Drive app folder |
+| Multi-user / roles / multi-firm | Phase 2 | Get the single-user core right on the device first; roles mean data-sharing + permission design, and that's Phase 2 work |
+| POS billing | Phase 2 | POS means fast counter billing + printer/scanner hardware; normal billing has to be solid on the device first, then POS mode |
+| Manufacturing / BOM / job-work | Phase 2 | A small shop needs billing and stock first; BOM is only for manufacturing shops, and comes after the core |
+| Loyalty points | Phase 2 | Loyalty only works once the party ledger + billing are solid; those are done, loyalty is Phase 2 |
+| Online store (catalogue first) | Phase 2 | A store needs payment + delivery + order flow; first a catalogue/share link (like a WhatsApp catalogue), then the store |
+| Bulk WhatsApp + marketing tools + greetings | Phase 2 | Bulk WhatsApp needs the WhatsApp Business API (cost + approval + spam risk); single-share is free now, bulk comes later |
+| Fixed assets | Phase 2 | Asset register (purchase, basic depreciation, list) — after the core |
+| Recycle Bin (soft-delete, 30-day restore) | Phase 2 | Bringing back deleted data is a flow that comes after the core |
+| Payment gateway (collect online payments + KYC) | Phase 2 | A gateway means KYC + charges + the user's bank account flow; the UPI QR is already free, the gateway comes later |
+| TCS/TDS on invoices | Phase 2 (with Payroll-lite) | Rates to be confirmed with the user/CA, with invoices + payroll |
+| Projects + timesheets | Phase 2 | Core shop work (billing/stock) first; projects are a different flow for service businesses |
+| Bank feeds | Phase 2 (CSV import first, live feed later) | A live feed needs a bank partnership/API (cost + approval); CSV import covers most of it |
+| Vendor/client portal | Phase 2 (share-link) | Send the party their statement/payment link, no login needed |
+| Budgets | Phase 2 | Monthly spend target vs actual — after the core reports |
+| Recurring invoices/bills, price lists, retainer/progress invoicing | Phase 2 | Auto monthly bills, per-party price lists, advance/retainer — after core billing |
+| Multi-currency | Phase 2 | INR first; foreign-currency parties get a rate the user enters |
+| Custom-report builder | Phase 2 | The summaries are free in Phase 1.2; the builder (make your own report) is Phase 2 |
+| Barcode scan | Phase 2 (app) | Barcode generation is in the Phase 1.2 spec; scanning uses CameraX in the Phase 2 app |
+| Transaction locking / audit trail | Phase 2 | Audit trail (who changed what, when) + period-close lock — after the core ledger |
+| Premium invoice themes | Phase 2 | All reports are free in Phase 1.2; invoice themes come in our own design, with no lock |
+| Serial number tracking | Phase 2 | Batch/expiry is done in Phase 1.2; serials come with items in Phase 2 |
+| Smart insights / forecasting | Phase 3 (on-device first) | Real forecasting needs either a lot of data or cloud cost; first a simple on-device insight (this month's sales vs last month, which item is selling), the rest later |
+| Exam Prep and Photo Editor modules | Phase 3a / 3b | After the business core, as separate modules |
+| Direct GST portal filing, realtime cloud sync | Never (by design) | The user uploads to the portal themselves; realtime sync would need a central server that can't run at ₹0 |
+| "CA-ready" claim | Only after Phase 1.3 | Only after a real CA import test passes — the Tally CSV stays BETA until then |
 
-**Out of Scope (not deferred, kabhi nahi):** koi paywall / "Pro" tier nahi
-hoga; koi ads nahi; user ka data kabhi central server pe nahi jayega.
+**Out of scope (not deferred, never):** no paywall / "Pro" tier; no
+ads; user data never goes to a central server.
 
-## Risks / Lessons (2026-11-22)
-- **Classic-script global collision (FOUND + FIXED in Phase 1.2):** every
-  Site module used top-level `const api` (and `let gst`, `roundDiv`,
-  `newId`, `paiseToRupees` …) — classic scripts share one global scope, so
-  the second script would throw `Identifier 'api' has already been
-  declared` and the Site would never load in a browser. Phase 1.1 never
-  ran in a browser, so it went unnoticed. Fixed by file-specific top-level
-  names + a Node vm smoke test that loads all scripts in order.
-  Rule: never add a top-level name without checking all other scripts.
-- **Sign conventions must be canonical:** party.js is the ledger truth
-  (positive = receivable). reports.js originally counted credit purchases
-  as cash-out and credit sales as cash-in — fixed in Phase 1.2 review:
-  cash flow counts only real cash (`payment` entries + cash invoices);
-  purchaseSummary returns the purchase value as a positive cost.
-- **Android subagent result removed by safety classifiers (Phase 1.1
-  round)** — that round carried no Android app or CI workflow. The user
-  then said yes to the Android route (2026-11-22, "Hn kr") and the parent
-  assigned Phase 2 as a fresh task; the App was built in this round
-  (scaffold + screens + CI workflow, above). Local Gradle stays blocked
-  on this VM — verified again 2026-11-22 with the local Gradle 8.7
-  binary (`--no-daemon` still fails: "Could not receive a message from
-  the daemon"); GitHub Actions is the only build route. The workflow
-  file itself cannot be pushed via the API (no workflow scope) — it must
-  be added via the GitHub web UI the first time.
-- **Repo — correction (2026-11-22):** `SkCena/udyamsetu` PRIVATE repo pehle
-  se bana hua hai; Phase 1.1 + 1.2 push ho chuke hain (head `177bbf0`).
-  Pehle ke 404 checks galat account (anon257261-lang) se the — SkCena
-  account (`93df4b10c85c4f048d61551aa0dac70f`) se repo dikhta hai. GitHub
-  commands me hamesha `--account` ke saath SkCena account use karo.
-  Repo create via API fail hota hai (403, App se create nahi hota) — create
-  ki zaroorat nahi hai, repo bana hua hai.
-- GST rules change / wrong calc = user penalty — CA review + test JSON
-  before any "CA-ready" claim; never guess rates.
-- Trademark for "UdyamSetu" — check before any public publish.
+## Risks and lessons
 
-## Open Questions
-- Trademark check for "UdyamSetu" — not done; before any public publish.
-- Real CA validation of invoice format / GSTR JSON — Phase 1.3, needs a CA.
+- **Classic-script global collision (found and fixed in Phase 1.2):**
+  every Site module used top-level `const api` (plus `let gst`,
+  `roundDiv`, `newId`, `paiseToRupees` …). Classic scripts share one
+  global scope, so the second script would throw `Identifier 'api'
+  has already been declared` and the Site would never load in a
+  browser. Phase 1.1 was never opened in a browser, so nobody
+  noticed. Fixed with file-specific top-level names + a Node vm smoke
+  test that loads all scripts in order.
+- **Sign rules have to be canonical:** `party.js` is the ledger truth
+  (positive = receivable). `reports.js` first counted credit purchases
+  as cash-out and credit sales as cash-in — fixed in the Phase 1.2
+  review: cash flow counts only real cash (`payment` entries + cash
+  invoices); the purchase summary returns the purchase value as a
+  positive cost.
+- **Local Gradle doesn't run on the dev machine** — verified again
+  with the local Gradle 8.7 binary (`--no-daemon` still fails: "Could
+  not receive a message from the daemon"). GitHub Actions is the only
+  build route. The workflow file itself can't be pushed through the
+  API (no workflow scope) — it has to be added through the GitHub
+  website the first time.
+- **Gradle wrapper jar:** `gradle-wrapper.jar` is a binary, so it
+  can't be pushed through the GitHub API either — that's why CI runs
+  the `gradle` command (8.7, installed by setup-gradle) instead of
+  `./gradlew`. If the jar is ever uploaded through the website,
+  `./gradlew` can come back.
+- GST rules change, and a wrong calculation means a penalty for the
+  user — CA review + test JSON before any "CA-ready" claim; never
+  guess rates.
+
+## Open questions
+
+- Trademark check for "UdyamSetu" — still pending; do it before any
+  Play Store listing.
+- Real CA validation of the invoice format / GSTR JSON — Phase 1.3,
+  needs a CA.
 - Logo upload in Setup: file input now, cropping later.
-- Phase 1.2 form field labels are Hindi-only static text — translate to
-  i18n keys in the next i18n step (chrome already switches fully).
+- Phase 1.2 form field labels are Hindi-only static text — move them
+  to i18n keys in the next i18n step (the chrome already switches
+  fully).

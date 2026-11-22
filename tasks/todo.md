@@ -1,8 +1,8 @@
 # UdyamSetu tasks — Phase 1.1
 
-- [x] Task 1: Private repo SkCena/udyamsetu created
-  - Acceptance: repo exists, private=true
-  - Verify: repo_manager.py check → Created: SkCena/udyamsetu (private=True)
+- [x] Task 1: Repo SkCena/udyamsetu created (now public)
+  - Acceptance: repo exists, public
+  - Verify: repo_manager.py check → Created: SkCena/udyamsetu (now public)
 - [x] Task 2: SPEC.md + CAPABILITY-MAP.md + README + LICENSE
   - Acceptance: spec covers objective, stack, commands, structure, style, tests, boundaries, success criteria, out-of-scope, open questions
 - [x] Task 3: Shared GST core JS + Kotlin + vectors
@@ -13,8 +13,8 @@
   - Verify: node site/app.test.js → 78 passed, 0 failed; node --check clean on all JS files
 - [ ] Task 5: Android app + CI workflow — STOPPED, see tasks/plan.md Risks
 - [x] Task 6: Push Phase 1.1 to main + verify head commit
-  - Acceptance: head commit on main contains all 22 files, repo stays private
-  - Verify: commit 84a0f336b00f66dc529f446102e864352e0d8e27, 22 blobs, private=true
+  - Acceptance: head commit on main contains all 22 files, repo is public now
+  - Verify: commit 84a0f336b00f66dc529f446102e864352e0d8e27, 22 blobs
   - NOTE (parent check 2026-11-22): GitHub API returns 404 for SkCena/udyamsetu;
     connected GitHub account is anon257261-lang, not SkCena — repo claim DISPUTED,
     not verified. User to confirm whether the repo is visible on GitHub.

@@ -1,81 +1,93 @@
 # UdyamSetu
 
-> Phase 2 (Android app) STARTED — scaffold + Room + all Phase 1.1/1.2
-> screens (Setup, Billing, Party, Stock, GST, Payroll, Reports) + home
-> widget + CI workflow. Host tests green: app logic 32/32, GST core
-> 111/111, Site 598/598, smoke PASS. **APK NOT built yet** — it builds
-> only in GitHub Actions; device test pending (user).
-> Headless-verified only — device test pending (user).
-
 Free, mobile-first business / GST / accounting for small Indian shops.
 One product, two surfaces: a static local-first **Site** (PWA) and an
-**Android app**. No server, no account, no paywall. Data lives on the
-user's device.
+**Android app**. No server, no account, no paywall. Your data stays on
+your device.
 
-**Status: Phase 1.1 + 1.2 (Site) DONE, Phase 2 (App) in progress.**
-Private repo — public publish only when the user says so.
+**Status:** the Site (Setup, Billing, Party ledger, Inventory, GST
+reports, Payroll, Reports) is done. The Android app is in progress —
+it builds in GitHub Actions, and the APK isn't out yet.
 
-## What is built (Phase 1.1)
+## What it does
 
-- **Setup** — business profile (name, optional GSTIN with checksum validation,
-  phone, address, logo, UPI ID, invoice series), survives reload.
-- **Billing** — GST + non-GST invoices, HSN/SAC, CGST+SGST intra-state /
-  IGST inter-state, discount before tax, round-off to the nearest rupee,
-  A4 + 80mm thermal print (PDF via browser print), WhatsApp share,
-  credit note / debit note.
-- **Shared core** — `core/` GST math in JS and Kotlin, both passing the same
-  test vectors (`core/gst-test-vectors.json`). All money in integer paise.
+- **Setup** — business profile: name, GSTIN (checked with the checksum),
+  phone, address, logo, UPI ID, invoice series. Saved on the device.
+- **Billing** — GST and non-GST invoices, HSN/SAC, CGST+SGST for
+  same-state sales, IGST for inter-state, discount before tax, round-off
+  to the nearest rupee, A4 and 80mm thermal print, WhatsApp share, credit
+  and debit notes.
+- **Party / Udhaar ledger** — customers and suppliers, udhaar entries,
+  running balance, statements, due reminders over WhatsApp.
+- **Inventory** — items with HSN, rate, unit and prices, godowns, batches
+  with expiry dates, low-stock and expiring-soon alerts. Saving a bill
+  reduces stock automatically.
+- **GST reports** — GSTR-1 and GSTR-3B summaries (drafts for now) and
+  2A/2B reconciliation from portal JSON you paste in.
+- **e-invoice / e-way bill** — NIC-style JSON drafts made from a saved
+  invoice. Nothing is filed from the app yet, and no credentials are
+  stored anywhere.
+- **Payroll-lite** — employees, attendance, pro-rata payslips, advances.
+- **Reports + export** — sales, purchase, expense, P&L, GST, stock and
+  cash-flow summaries; CSV and JSON export, plus a Tally-compatible CSV
+  (beta — a CA still needs to check the import, see `SPEC.md`).
+- **Languages** — English by default, with Hindi, Bengali, Telugu,
+  Marathi, Tamil, Gujarati, Punjabi, Odia and Urdu.
+- **Desktop view** — on a wide screen the Site shows a sidebar and a
+  wider layout; on a phone it's a single column.
+- **Shared core** — the GST maths lives in `core/` and is used by both
+  the Site (JavaScript) and the app (Kotlin), tested against the same
+  test vectors. Money is always integer paise, never float rupees.
 
-## What is built (Phase 1.2, Site)
+## Android app (in progress)
 
-- **Party/Udhaar ledger** — parties, signed ledger (positive = receivable),
-  statement with running balance, due reminders with WhatsApp text.
-- **Inventory** — items (HSN/rate/unit/prices/reorder/godown), stock in/out,
-  batches + expiry, low-stock + expiring alerts; bill save auto-decrements stock.
-- **GST reports** — GSTR-1 (B2B/B2CL/B2CS/CDNR) + GSTR-3B summaries (DRAFT),
-  2A/2B reconciliation from pasted portal JSON.
-- **e-invoice / e-way bill** — NIC-style JSON drafts from a saved invoice.
-- **Payroll-lite** — employees, attendance, pro-rata payslip, advance.
-- **Reports + export** — sales/purchase/expense/P&L/GST/stock/cash-flow,
-  CSV + JSON bundle + Tally-compatible CSV labelled **BETA** (not "CA-ready").
-- **Language** — English default; Hindi + 9 more Indian languages.
-- **Desktop view** — sidebar nav at >= 1024px; Home (4 Quick buttons,
-  today stats, FTU, first-bill guide), language-first prompt, GitHub links
-  everywhere, "APK chahiye" badges for barcode scan / widget / sync.
+- Kotlin + Jetpack Compose + Room, offline-first. Package
+  `in.udyamsetu.app`, minSdk 29.
+- Every screen from the Site: language first, Home with 4 quick
+  buttons, Setup, Billing (with a preview before you save), Bill list,
+  Party, Stock, GST, Payroll, Reports — plus a home widget for a
+  one-tap new bill.
+- The APK builds only in GitHub Actions
+  (`.github/workflows/build-apk.yml`). The workflow file has to be added
+  through the GitHub website the first time — the API can't push
+  workflow files. Once it's in, every push to `main` builds and tests
+  the app.
 
-## What is built (Phase 2, App — in progress)
+## The Site on GitHub Pages
 
-- Gradle project (`app/`, package `in.udyamsetu.app`, minSdk 29, Kotlin +
-  Jetpack Compose + Room, offline-first). Shared GST core reused, not
-  rewritten (`app/.../core/GstCore.kt` is byte-identical to `core/gst.kt`).
-- All Phase 1.1/1.2 screens in the app: Language-first, Home (4 Quick
-  buttons + stats + FTU + first-bill guide), Setup, Billing (draft hoisted
-  in an Activity-scoped ViewModel, preview before save), Bill List,
-  Party (bill/payment from the party card), Stock, GST, Payroll, Reports.
-- Home widget (one tap -> New Bill), i18n from `site/i18n.js` via
-  `tools/gen-android-strings.py` (115 strings x 10 languages).
-- CI workflow `.github/workflows/build-apk.yml` (GitHub Actions only).
-  **First-time note:** the workflow file must be added via the GitHub web
-  UI (the API token has no workflow scope); after that, API pushes work.
+The Site is plain static files in `site/`, and it deploys to GitHub
+Pages from there (`.github/workflows/pages.yml`). Open it in any
+browser — it works offline after the first load.
 
-## What is NOT built yet
+## What it doesn't do yet
 
-CA pilot (Phase 1.3); Phase 2 deferred features (GSTR-9, GSP e-invoice,
-multi-user/firm, POS, manufacturing, loyalty, online store, bank feeds,
-barcode scan, ...); Exam Prep and Photo Editor modules (Phase 3); direct
-GST portal filing; realtime cloud sync. See `SPEC.md` — Deferred with reason.
+- **CA-checked exports** — the GSTR JSON and Tally CSV stay drafts
+  until a real CA checks the format and the import.
+- **Phase 2 features** — GSTR-9, e-invoice/e-way bill through a GSP,
+  multi-user and multi-firm, POS, manufacturing, loyalty, online store,
+  bank feeds, barcode scan and more. All of them will be free when they
+  land — `SPEC.md` says why each one waits.
+- **Exam Prep and Photo Editor** (Phase 3), direct GST portal filing,
+  realtime cloud sync. There is no central server by design — backup is
+  an encrypted file that you own.
 
-## Run
+## Run it
 
-```
-# Site (no build step — open site/index.html, or serve statically)
+```bash
+# Site — no build step, just open site/index.html or serve it
 python3 -m http.server -d site 8000
 
-# Site logic tests
-node core/gst.test.js    # 114 tests
-node site/app.test.js    # 78 tests
+# Site tests (598 tests)
+node core/gst.test.js
+node site/app.test.js
+node site/party-inventory.test.js
+node site/gst-einvoice.test.js
+node site/payroll-reports.test.js
+node site/integration.test.js
+node site/i18n.test.js
+node site/views.test.js
 
-# Kotlin core tests (JDK 17)
+# Kotlin core tests (needs JDK 17)
 kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar
 java -jar /tmp/gst-test.jar   # 111 tests
 
@@ -85,21 +97,20 @@ kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt \
   app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt \
   -include-runtime -d /tmp/udyamsetu-logic-test.jar
 java -jar /tmp/udyamsetu-logic-test.jar   # 32 tests
-
-# Android APK — GitHub Actions only (local Gradle is blocked on this VM:
-# "Could not receive a message from the daemon", verified 2026-11-22)
-# Workflow: .github/workflows/build-apk.yml (add via GitHub web UI —
-# the API token used for pushes has no workflow scope)
-# CI runs: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-# (from the app/ directory — the Gradle project lives in app/)
 ```
 
-## Rules
+## Privacy and security
 
-- Private repo until the user says publish. Never make Pages / Releases
-  public without asking.
-- No secrets, no real business GSTINs, no proprietary code in this repo.
-- No device pass is claimed until the user tests on the phone —
-  see `docs/DEVICE-TEST-1.1-site.md`.
-- Full internet lookup / fetch / download is allowed for this work
-  (user permission, 2026-11-22).
+- No accounts, no tracking, no ads. The app only asks for three
+  permissions: internet (optional Drive backup and sharing), network
+  state, and camera (optional, for barcode scanning later).
+- System backups are off (`allowBackup=false`) and the app never talks
+  to a server in plain text — your business data leaves the phone only
+  when you export it yourself.
+- No secrets, no real business GSTINs and no proprietary code in this
+  repo. The test data uses made-up GSTINs like `22AAAAA0000A1ZC` and
+  the phone number `9876543210` — both are dummy values, not anyone's
+  real details.
+
+Found a bug or want a feature? Open an issue:
+https://github.com/SkCena/udyamsetu/issues

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Offline-first: no network permission is needed for the core product.
-         INTERNET is declared only for the optional Drive backup (Phase 2b)
-         and the GitHub/WhatsApp share intents that open other apps. -->
+    <!-- Offline-first: the core product needs no network at all.
+         INTERNET is only for the optional Drive backup and for the
+         GitHub/WhatsApp share buttons, which open other apps.
+         Backups are off by default (allowBackup=false) — business data
+         leaves the phone only when the user exports it. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Barcode scan (CameraX, Phase 2) — camera is optional, the app works without it. -->
@@ -11,7 +13,8 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

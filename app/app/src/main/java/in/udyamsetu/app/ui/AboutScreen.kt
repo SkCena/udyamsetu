@@ -1,6 +1,6 @@
 // UdyamSetu — About. Free, no paywall, no ads, data stays on the phone.
-// GitHub link everywhere (repo is private for now — the link opens once
-// it is public; that is written here, not hidden).
+// The code is open source — the GitHub link is here for anyone who wants
+// to read it, report a bug, or build it themselves.
 package `in`.udyamsetu.app.ui
 
 import android.content.Intent
@@ -27,7 +27,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
             Text(stringResource(R.string.about_text))
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 Text(stringResource(R.string.github_title))
-                Text(stringResource(R.string.github_private_note))
+                Text(stringResource(R.string.github_note))
                 TextButton(onClick = {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SkCena/udyamsetu")))
                 }) { Text(stringResource(R.string.github_link)) }

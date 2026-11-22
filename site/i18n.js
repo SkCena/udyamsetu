@@ -94,7 +94,7 @@ const STRINGS = {
     apkNote: 'These cannot work in a browser — they need the Android app (APK). Everything else is right here on this site.',
     apkBadge: 'APK needed',
     aboutTitle: 'About — UdyamSetu',
-    aboutText: 'UdyamSetu is free GST billing for small shops — no paywall, no ads, your data stays on your phone. The GitHub repo is private for now — the link will open once it is public.',
+    aboutText: 'UdyamSetu is free GST billing for small shops — no paywall, no ads, your data stays on your phone.',
     githubLink: 'GitHub repo',
   },
   hi: {
@@ -166,7 +166,7 @@ const STRINGS = {
     apkNote: 'Ye kaam browser me nahi ho sakta — inke liye Android app (APK) chahiye. Baaki sab kuch is site par hi hai.',
     apkBadge: 'APK chahiye',
     aboutTitle: 'About — UdyamSetu',
-    aboutText: 'UdyamSetu chhoti dukaan ke liye free GST billing hai — koi paywall nahi, koi ads nahi, aapka data aapke phone par hi rehta hai. GitHub repo abhi private hai — public hone ke baad link khulega.',
+    aboutText: 'UdyamSetu chhoti dukaan ke liye free GST billing hai — koi paywall nahi, koi ads nahi, aapka data aapke phone par hi rehta hai.',
     githubLink: 'GitHub repo',
   },
   bn: {
@@ -230,7 +230,7 @@ const STRINGS = {
     apkNote: 'এই কাজ ব্রাউজারে হয় না — এর জন্য Android অ্যাপ (APK) দরকার। বাকি সব এই সাইটেই আছে।',
     apkBadge: 'APK দরকার',
     aboutTitle: 'সম্পর্কে — UdyamSetu',
-    aboutText: 'UdyamSetu ছোট দোকানের জন্য ফ্রি GST বিলিং — কোনো পেওয়াল নেই, কোনো বিজ্ঞাপন নেই, আপনার ডেটা আপনার ফোনেই থাকে। GitHub রেপো এখন প্রাইভেট — পাবলিক হলে লিঙ্ক খুলবে।',
+    aboutText: 'UdyamSetu ছোট দোকানের জন্য ফ্রি GST বিলিং — কোনো পেওয়াল নেই, কোনো বিজ্ঞাপন নেই, আপনার ডেটা আপনার ফোনেই থাকে।',
     githubLink: 'GitHub রেপো',
   },
   te: {
@@ -294,7 +294,7 @@ const STRINGS = {
     apkNote: 'ఈ పనులు బ్రౌజర్‌లో కావు — వీటికి Android యాప్ (APK) కావాలి. మిగతావన్నీ ఈ సైట్‌లోనే ఉన్నాయి.',
     apkBadge: 'APK కావాలి',
     aboutTitle: 'గురించి — UdyamSetu',
-    aboutText: 'UdyamSetu చిన్న దుకాణాలకు ఉచిత GST బిల్లింగ్ — పేవాల్ లేదు, యాడ్స్ లేవు, మీ డేటా మీ ఫోన్‌లోనే ఉంటుంది. GitHub రెపో ఇప్పుడు ప్రైవేట్ — పబ్లిక్ అయ్యాక లింక్ తెరుచుకుంటుంది.',
+    aboutText: 'UdyamSetu చిన్న దుకాణాలకు ఉచిత GST బిల్లింగ్ — పేవాల్ లేదు, యాడ్స్ లేవు, మీ డేటా మీ ఫోన్‌లోనే ఉంటుంది.',
     githubLink: 'GitHub రెపో',
   },
   mr: {
@@ -358,7 +358,7 @@ const STRINGS = {
     apkNote: 'ही कामे ब्राउझरमध्ये होत नाहीत — त्यासाठी Android अ‍ॅप (APK) लागते. बाकी सर्व काही या साइटवरच आहे.',
     apkBadge: 'APK हवे',
     aboutTitle: 'माहिती — UdyamSetu',
-    aboutText: 'UdyamSetu छोट्या दुकानासाठी मोफत GST बिलिंग आहे — पेवॉल नाही, जाहिराती नाहीत, तुमचा डेटा तुमच्याच फोनवर राहतो. GitHub रेपो सध्या प्रायव्हेट आहे — पब्लिक झाल्यावर लिंक उघडेल.',
+    aboutText: 'UdyamSetu छोट्या दुकानासाठी मोफत GST बिलिंग आहे — पेवॉल नाही, जाहिराती नाहीत, तुमचा डेटा तुमच्याच फोनवर राहतो.',
     githubLink: 'GitHub रेपो',
   },
   ta: {
@@ -422,7 +422,7 @@ const STRINGS = {
     apkNote: 'இந்த வேலைகள் உலாவியில் முடியாது — இதற்கு Android செயலி (APK) தேவை. மற்ற அனைத்தும் இந்த தளத்திலேயே உள்ளன.',
     apkBadge: 'APK தேவை',
     aboutTitle: 'பற்றி — UdyamSetu',
-    aboutText: 'UdyamSetu சிறு கடைகளுக்கான இலவச GST பில்லிங் — கட்டணம் இல்லை, விளம்பரம் இல்லை, உங்கள் தரவு உங்கள் தொலைபேசியிலேயே இருக்கும். GitHub repo இப்போது தனியாக உள்ளது — பொதுவானதும் இணைப்பு திறக்கும்.',
+    aboutText: 'UdyamSetu சிறு கடைகளுக்கான இலவச GST பில்லிங் — கட்டணம் இல்லை, விளம்பரம் இல்லை, உங்கள் தரவு உங்கள் தொலைபேசியிலேயே இருக்கும்.',
     githubLink: 'GitHub repo',
   },
   gu: {
@@ -486,7 +486,7 @@ const STRINGS = {
     apkNote: 'આ કામ બ્રાઉઝરમાં થતું નથી — તેના માટે Android એપ (APK) જોઈએ. બાકી બધું આ સાઇટ પર જ છે.',
     apkBadge: 'APK જોઈએ',
     aboutTitle: 'વિશે — UdyamSetu',
-    aboutText: 'UdyamSetu નાની દુકાન માટે મફત GST બિલિંગ છે — કોઈ પેવોલ નથી, કોઈ જાહેરાત નથી, તમારો ડેટા તમારા ફોન પર જ રહે છે. GitHub રેપો હાલમાં પ્રાઇવેટ છે — પબ્લિક થતાં જ લિંક ખૂલશે.',
+    aboutText: 'UdyamSetu નાની દુકાન માટે મફત GST બિલિંગ છે — કોઈ પેવોલ નથી, કોઈ જાહેરાત નથી, તમારો ડેટા તમારા ફોન પર જ રહે છે.',
     githubLink: 'GitHub રેપો',
   },
   pa: {
@@ -550,7 +550,7 @@ const STRINGS = {
     apkNote: 'ਇਹ ਕੰਮ ਬਰਾਊਜ਼ਰ ਵਿੱਚ ਨਹੀਂ ਹੁੰਦਾ — ਇਸ ਲਈ Android ਐਪ (APK) ਚਾਹੀਦੀ ਹੈ। ਬਾਕੀ ਸਭ ਕੁਝ ਇਸ ਸਾਈਟ ’ਤੇ ਹੀ ਹੈ।',
     apkBadge: 'APK ਚਾਹੀਦੀ ਹੈ',
     aboutTitle: 'ਬਾਰੇ — UdyamSetu',
-    aboutText: 'UdyamSetu ਛੋਟੀ ਦੁਕਾਨ ਲਈ ਮੁਫ਼ਤ GST ਬਿਲਿੰਗ ਹੈ — ਕੋਈ ਪੇਵਾਲ ਨਹੀਂ, ਕੋਈ ਵਿਗਿਆਪਨ ਨਹੀਂ, ਤੁਹਾਡਾ ਡਾਟਾ ਤੁਹਾਡੇ ਫ਼ੋਨ ’ਤੇ ਹੀ ਰਹਿੰਦਾ ਹੈ। GitHub ਰੈਪੋ ਹੁਣ ਪ੍ਰਾਈਵੇਟ ਹੈ — ਪਬਲਿਕ ਹੁੰਦਿਆਂ ਹੀ ਲਿੰਕ ਖੁੱਲ੍ਹੇਗਾ।',
+    aboutText: 'UdyamSetu ਛੋਟੀ ਦੁਕਾਨ ਲਈ ਮੁਫ਼ਤ GST ਬਿਲਿੰਗ ਹੈ — ਕੋਈ ਪੇਵਾਲ ਨਹੀਂ, ਕੋਈ ਵਿਗਿਆਪਨ ਨਹੀਂ, ਤੁਹਾਡਾ ਡਾਟਾ ਤੁਹਾਡੇ ਫ਼ੋਨ ’ਤੇ ਹੀ ਰਹਿੰਦਾ ਹੈ।',
     githubLink: 'GitHub ਰੈਪੋ',
   },
   or: {
@@ -614,7 +614,7 @@ const STRINGS = {
     apkNote: 'ଏହି କାମ ବ୍ରାଉଜରରେ ହେବ ନାହିଁ — ଏଥିପାଇଁ Android ଆପ୍ (APK) ଦରକାର। ବାକି ସବୁ ଏହି ସାଇଟ୍‌ରେ ଅଛି।',
     apkBadge: 'APK ଦରକାର',
     aboutTitle: 'ବିଷୟରେ — UdyamSetu',
-    aboutText: 'UdyamSetu ଛୋଟ ଦୋକାନ ପାଇଁ ମାଗଣା GST ବିଲିଂ — କୌଣସି ପେୱାଲ୍ ନାହିଁ, କୌଣସି ବିଜ୍ଞାପନ ନାହିଁ, ଆପଣଙ୍କ ଡାଟା ଆପଣଙ୍କ ଫୋନ୍‌ରେ ହିଁ ରହେ। GitHub ରେପୋ ଏବେ ପ୍ରାଇଭେଟ୍ — ପବ୍ଲିକ୍ ହେଲେ ଲିଙ୍କ୍ ଖୋଲିବ।',
+    aboutText: 'UdyamSetu ଛୋଟ ଦୋକାନ ପାଇଁ ମାଗଣା GST ବିଲିଂ — କୌଣସି ପେୱାଲ୍ ନାହିଁ, କୌଣସି ବିଜ୍ଞାପନ ନାହିଁ, ଆପଣଙ୍କ ଡାଟା ଆପଣଙ୍କ ଫୋନ୍‌ରେ ହିଁ ରହେ।',
     githubLink: 'GitHub ରେପୋ',
   },
   ur: {
@@ -678,7 +678,7 @@ const STRINGS = {
     apkNote: 'یہ کام براؤزر میں نہیں ہو سکتا — اس کے لیے Android ایپ (APK) چاہیے۔ باقی سب کچھ اسی سائٹ پر ہے۔',
     apkBadge: 'APK چاہیے',
     aboutTitle: 'متعلق — UdyamSetu',
-    aboutText: 'UdyamSetu چھوٹی دکان کے لیے مفت GST بلنگ ہے — کوئی پے وال نہیں، کوئی اشتہار نہیں، آپ کا ڈیٹا آپ کے فون پر ہی رہتا ہے۔ GitHub ریپو ابھی پرائیویٹ ہے — پبلک ہونے کے بعد لنک کھلے گا۔',
+    aboutText: 'UdyamSetu چھوٹی دکان کے لیے مفت GST بلنگ ہے — کوئی پے وال نہیں، کوئی اشتہار نہیں، آپ کا ڈیٹا آپ کے فون پر ہی رہتا ہے۔',
     githubLink: 'GitHub ریپو',
   },
 };

@@ -107,7 +107,7 @@ ok('APK download link appears in home card + about + footer',
 // --- 6. GitHub link everywhere ---
 const ghLinks = (html.match(/href="https:\/\/github\.com\/SkCena\/udyamsetu"/g) || []).length;
 ok('GitHub repo link appears in header + home + about + footer (>= 4)', ghLinks >= 4, 'found ' + ghLinks);
-ok('GitHub link is the SkCena/udyamsetu repo (private — opens once public)',
+ok('GitHub link is the public SkCena/udyamsetu repo',
   /github\.com\/SkCena\/udyamsetu/.test(html));
 
 // --- 7. New visible keys exist in all 10 languages (i18n.test.js also checks this) ---
@@ -125,8 +125,8 @@ ok('new home/ftu/guide keys exist in English + Hindi',
 // --- 8. SPEC documents the views ---
 ok('SPEC has a Web views section', /## Web views/.test(spec));
 ok('SPEC Web views covers mobile + desktop + acceptance', /Mobile view/.test(spec) && /Desktop view/.test(spec) && /Acceptance/.test(spec));
-ok('SPEC notes the repo is private so the GitHub link opens only once public',
-  /private.*public/.test(spec));
+ok('SPEC says the repo is public at SkCena/udyamsetu',
+  /repo is\s+public at `https:\/\/github\.com\/SkCena\/udyamsetu`/.test(spec));
 
 console.log(`views tests: ${pass} passed, ${fail} failed`);
 if (failures.length) {

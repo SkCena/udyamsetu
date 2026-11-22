@@ -5,7 +5,7 @@ Source spec: SPEC.md (V1, Phase 1.1: Setup + Billing)
 ## Overview
 Free, mobile-first Business/GST/Accounting. Phase 1.1 = Setup + Billing only,
 on two surfaces (static Site PWA + Android app) sharing one GST core and one
-data model. Local-first, no server, no paywall. Private repo.
+data model. Local-first, no server, no paywall. Public repo.
 
 ## Architecture Decisions
 - Money in integer paise everywhere; GST math in pure functions, tested
@@ -20,7 +20,7 @@ data model. Local-first, no server, no paywall. Private repo.
 ## Task List
 
 ### Phase 1.1 — done this round
-- [x] Task 1: Private repo SkCena/udyamsetu created (verified private=true)
+- [x] Task 1: Repo SkCena/udyamsetu created (now public)
 - [x] Task 2: SPEC.md + CAPABILITY-MAP.md + README + LICENSE (MIT)
 - [x] Task 3: Shared GST core (JS + Kotlin) + vectors — JS 114/114, Kotlin 111/111
 - [x] Task 4: Site Setup + Billing (PWA) — site tests 78/78
@@ -29,7 +29,7 @@ data model. Local-first, no server, no paywall. Private repo.
 
 ### Checkpoint: Phase 1.1
 - [ ] All test suites green (core JS, core Kotlin, site)
-- [ ] Site + spec pushed to private repo
+- [ ] Site + spec pushed to the repo
 - [ ] Device test cards written (site done; app pending Android work)
 - [ ] No device pass claimed
 
@@ -49,7 +49,7 @@ data model. Local-first, no server, no paywall. Private repo.
 | Android subagent result removed by safety classifiers; that portion must not be continued/recreated in this round | High — no Android app or CI workflow in this deliverable | Report honestly; parent decides next route for the App |
 | GST rules change / wrong calc = user penalty | High | CA review + test JSON before any "CA-ready" claim; never guess rates |
 | CA acceptance of export formats | High | Pilot with a real CA in Phase 1.3; no claim until import test passes |
-| Trademark for "UdyamSetu" | Med | Check before any public publish; repo stays private |
+| Trademark for "UdyamSetu" | Med | Check before any Play Store listing; repo is public now |
 | Local Gradle blocked | Med | GitHub Actions is the only APK route |
 
 ## Open Questions

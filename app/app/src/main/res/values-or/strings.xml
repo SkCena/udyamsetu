@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="about_text">UdyamSetu ଛୋଟ ଦୋକାନ ପାଇଁ ମାଗଣା GST ବିଲିଂ — କୌଣସି ପେୱାଲ୍ ନାହିଁ, କୌଣସି ବିଜ୍ଞାପନ ନାହିଁ, ଆପଣଙ୍କ ଡାଟା ଆପଣଙ୍କ ଫୋନ୍‌ରେ ହିଁ ରହେ। GitHub ରେପୋ ଏବେ ପ୍ରାଇଭେଟ୍ — ପବ୍ଲିକ୍ ହେଲେ ଲିଙ୍କ୍ ଖୋଲିବ।</string>
+    <string name="about_text">UdyamSetu ଛୋଟ ଦୋକାନ ପାଇଁ ମାଗଣା GST ବିଲିଂ — କୌଣସି ପେୱାଲ୍ ନାହିଁ, କୌଣସି ବିଜ୍ଞାପନ ନାହିଁ, ଆପଣଙ୍କ ଡାଟା ଆପଣଙ୍କ ଫୋନ୍‌ରେ ହିଁ ରହେ।</string>
     <string name="about_title">ବିଷୟରେ — UdyamSetu</string>
     <string name="add_line">+ ଆଇଟମ୍ ଯୋଡନ୍ତୁ</string>
     <string name="against">Against: </string>
@@ -109,7 +109,7 @@
     <string name="apk_needed_hint">This needs the app — it cannot work in a browser.</string>
     <string name="app_name">UdyamSetu</string>
     <string name="first_bill_guide">Your first bill: 1) Fill Setup  2) Add a Party  3) Add items and save.</string>
-    <string name="github_private_note">The repo is private for now — this link will open once it is made public.</string>
+    <string name="github_note">Open source — the code is on GitHub.</string>
     <string name="github_title">UdyamSetu on GitHub</string>
     <string name="preview_before_save">Preview before saving</string>
     <string name="tab_bills">Bills</string>

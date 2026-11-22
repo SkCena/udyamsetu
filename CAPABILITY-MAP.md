@@ -8,7 +8,7 @@
 | inventory | Items, stock, godown, batch/expiry, barcode | billing |
 | gst-reports | GSTR-1/3B JSON, 2A/2B reconciliation, e-invoice/e-way JSON | billing, inventory |
 | payroll-lite | Employees, salary, PF/ESI/PT/TDS basics, payslip | business-profile |
-| reports-export | Sales/purchase/P&L/Balance Sheet, CA-ready export | billing, inventory, gst-reports |
+| reports-export | Sales/purchase/P&L/Balance Sheet, Tally CSV export (beta, CA check pending) | billing, inventory, gst-reports |
 | sync-backup | Encrypted backup file, Drive app-folder backup | all above |
 | exam-prep | Mock tests, PYQ, plan (Phase 3a) | — |
 | photo-editor | Pro photo edit, layers, print-ready (Phase 3b) | — |
