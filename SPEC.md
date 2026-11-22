@@ -8,7 +8,15 @@ Android app. No server, no account, no paywall. Data lives on the user's device.
 V1 Phase 1.1 covers: business **Setup** and **Billing** (invoice create,
 GST math, PDF, share). Phase 1.2 adds: **Party/Udhaar ledger, Inventory,
 GST reports + e-invoice/e-way JSON, Payroll-lite, Reports + export**.
-Everything else from the plan is Deferred, not dropped.
+Everything else from the plan is Deferred, not dropped — see
+"Deferred with reason" below.
+
+**Goal LOCK (2026-11-22, user): EACH AND EVERY paid feature free.**
+Har paid cheez free mile, taaki user ko realise ho ki jis cheez ka wo paid
+de raha tha, wo yahan free hai. Iska poora 37-row checklist APK REA report
+`~/workspace/research_notes/vyapar-zoho-apk-rea-20261122/report.md` §5 me hai;
+har row ka UdyamSetu jawab §8 me hai. Koi feature bina reason ke "baad me"
+nahi chhoda gaya — har deferred feature ke saamne kyun likha hai.
 
 ## Language LOCK (2026-11-22, user)
 Primary language is **ENGLISH** (default). Other Indian languages switch via
@@ -165,13 +173,104 @@ docs/                -> Device test cards + notes
 - [ ] Device test card for Phase 1.2 written — see
       `docs/DEVICE-TEST-1.2-site.md` (user runs it on the phone).
 
-## Out of Scope (Deferred)
-- Multi-user/firm, bank feeds, online store/POS/loyalty, manufacturing/BOM,
-  AI — Phase 2+.
-- Exam Prep and Photo Editor modules — Phase 3.
-- Direct GST portal filing, GSP integration, realtime cloud sync.
-- Public repo / GitHub Pages publish — user decision, later.
-- "CA-ready" claim — only after a real CA import test passes (Phase 1.3).
+## Phase 1.3 — CA pilot (APK REA §8)
+
+Goal: jo "DRAFT / BETA" hai, use real CA se validate karke hi "ready" bolna.
+- [ ] GSTR-1/3B JSON + e-invoice/e-way JSON: ek real CA ke paas format check
+      karwana — portal ke format se match kare, tabhi "filing-ready" bolenge.
+      Usse pehle GSTR/e-invoice outputs **DRAFT** hi rahenge.
+- [ ] Tally-compatible CSV: ek real CA ke paas import test pass hona chahiye
+      — tabhi "CA-ready" bolenge. Usse pehle Tally CSV **BETA** hi rahega.
+- [ ] CA pilot ka result (pass/fail + kya badla) SPEC me likhna.
+
+## Phase 2 — Android app + sync + deferred paid features (APK REA §8)
+
+Goal: wahi core, Site + Android app dono pe, ek hi data — aur §8 ke
+Phase-2 features sab free.
+- App: Kotlin + Jetpack Compose, Room/SQLite, offline-first, package
+  `in.udyamsetu.app`, minSdk 29. Build GitHub Actions se hi (local Gradle
+  blocked hai). CI green hone par hi APK ki baat hogi.
+- Sync: **2a** encrypted backup file (export/import — site ↔ app, WhatsApp /
+  Drive / pen-drive se); **2b** user ke apne Google Drive app-folder me
+  auto-backup. Central server nahi hoga.
+- Features (sab free): GSTR-9 annual; e-invoice/e-way via GSP (user ke
+  credentials se); multi-user/roles + multi-firm; POS billing; manufacturing
+  / BOM; loyalty points; online store catalogue → store; bulk WhatsApp /
+  marketing / greetings; fixed assets; Recycle Bin; payment gateway; TCS/TDS;
+  projects + timesheets; bank feeds (CSV import pehle, live feed baad me);
+  vendor/client portal share-link; budgets; recurring invoices/bills, price
+  lists, retainer/progress invoicing; multi-currency; custom-report builder;
+  barcode scan (CameraX); transaction locking + audit trail; invoice themes;
+  serial tracking.
+- Acceptance: 3-tap bill test (neeche Easy-UI plan) device pe pass ho.
+
+## Phase 3 — AI insights, on-device pehle (APK REA §8)
+
+- Pehle simple on-device insight, bina cloud AI ke, phone pe calc: is
+  mahine ki sale pichhle mahine se kitni, kaunsa item chal raha hai, kaunsa
+  party udhaar me late hai.
+- Asli AI/forecasting (anomaly detection, forecasting) uske baad — uske liye
+  ya to bada data chahiye ya cloud cost, isliye Phase 3 me hi, jaldi me nahi.
+- Phase 3a Exam Prep + 3b Photo Editor isi phase ke alag modules hain
+  (plan-and-name.md §6 dekho).
+
+## Easy-UI plan (APK REA §6 + §8.1 — dono apps se seekh, apne tareeke se)
+
+Competitor ka code/text/asset/design copy nahi hoga — sirf flow samajh ke
+apne tareeke se banayenge.
+
+| Seekh | UdyamSetu me apne tareeke se | Phase |
+|---|---|---|
+| Language pehle screen pe (Vyapar) | Pehle screen pe language poochna (English default, Hindi + 10 languages tab) — settings me chhupana nahi | 1.2 tab DONE → pehle-screen prompt Phase 2 (App) |
+| FTU = 3 chhote sawaal | Setup me 3 sawaal (duk kaan type, GST hai ya nahi, kya bechte ho) — uske hisaab se dashboard | Phase 2 (App) |
+| Guided pehla bill + preview | Pehli baar bill banate waqt step guide + save se pehle preview (galti pakadne ka step) | Phase 2 (App) |
+| Quick Create (Zoho) | Home pe 4 bade button — Bill, Udhaar, Stock, Payment — ek tap me | Phase 2 (App) |
+| Home widget (Zoho) | Android home widget — phone ke home se seedha bill, app khole bina | Phase 2 (App) |
+| Party se seedha bill (Zoho) | Party kholo → usi se bill / payment / udhaar (context se kaam, wapas jaake dhoondhna nahi) | 1.2 DONE (party se statement/payment); bill Phase 2 (App) |
+| Welcome screens me fayda, feature nahi (Zoho) | Onboarding me fayda likhna ("udhaar yaad rahega", "GST report ban jayega") — feature list nahi | Phase 2 (App) |
+| HSN offline (Vyapar) | HSN master app ke andar (offline lookup, type karte hi suggestion, internet nahi chahiye) | Phase 2 (App; Site me list) |
+| Shimmer + empty-state guide | Khaali screen pe guide ("+ dabake pehla bill banao"), blank screen nahi | 1.2 Site partial → Phase 2 (App) |
+| 3-tap bill target — acceptance test | Home → Party → Items → Preview/Share: bill 3 tap me shuru, 5 tap me share. Ye Phase 2 ka acceptance test hai | Phase 2 (App) |
+
+## Deferred with reason (APK REA §8, 2026-11-22 — dropped nahi, baad me)
+
+Har row: feature jo competitor apps me paid hai, UdyamSetu me free milega,
+par phase baad me hai — saamne kyun likha hai.
+
+| Feature (paid elsewhere) | Phase | Kyun baad me |
+|---|---|---|
+| GSTR-9 annual return | Phase 2 | Saal-bhar ka data + HSN summary + portal format pehle Phase 1.3 me validate hona chahiye; GSTR-9 galat gaya to penalty ka risk hai, isliye jaldi me nahi |
+| e-invoice IRN + e-way bill via GSP | Phase 2 (GSP) | GSP integration ke liye user ke credentials + GSP ka kharcha/process CA se confirm karna baki hai; JSON DRAFT Phase 1.2 me done hai |
+| Multi-device sync + cloud backup | Phase 2a backup file → 2b Drive | Bina server ke realtime sync free me nahi hota; central server ₹0 me nahi chalega aur privacy risk hai. Pehle encrypted backup file (export/import), phir user ke apne Google Drive app-folder me backup |
+| Multi-user / roles / multi-firm | Phase 2 | Pehle single-user core ko device pe sahi karna hai; roles ke saath data-sharing + permission ka design Phase 2 ka kaam hai |
+| POS billing | Phase 2 | POS ka matlab tez counter billing + printer/scanner hardware; pehle normal billing ko device pe sahi karna hai, phir POS mode |
+| Manufacturing / BOM / job-work | Phase 2 | Chhoti dukaan ko pehle billing/stock chahiye; BOM sirf manufacturing wali dukaanon ka kaam hai, core ke baad |
+| Loyalty points | Phase 2 | Loyalty tabhi kaam karta hai jab party ledger + billing pakka ho; pehle wo done hai, ab loyalty Phase 2 me |
+| Online store (catalogue pehle) | Phase 2 | Online store ke liye payment + delivery + order ka flow chahiye; pehle catalogue/share (WhatsApp catalogue jaisa link), phir store |
+| Bulk WhatsApp + marketing tools + greetings | Phase 2 | Bulk WhatsApp ke liye WhatsApp Business API chahiye (cost + approval + spam risk); single-share abhi free hai, bulk baad me |
+| Fixed assets | Phase 2 | Asset register (kharid, basic depreciation, list) — core ke baad |
+| Recycle Bin (soft-delete, 30 din restore) | Phase 2 | Delete hua data wapas lane ka flow core ke baad |
+| Payment gateway (online payment collect + KYC) | Phase 2 | Gateway ke liye KYC + charges + user ke bank account ka flow hai; UPI QR pehle se free hai, gateway baad me |
+| TCS/TDS on invoices | Phase 2 (Payroll-lite ke saath) | Rates user/CA se confirm karke, invoice + payroll ke saath |
+| Projects + timesheets | Phase 2 | Core dukaan (billing/stock) pehle; project service-business ka alag flow hai |
+| Bank feeds | Phase 2 (CSV import pehle, live feed baad me) | Live feed ke liye bank partnership/API chahiye (cost + approval); CSV import se 80% kaam ho jata hai |
+| Vendor/client portal | Phase 2 (share-link) | Party ko uska statement/payment link bhej do, bina login ke |
+| Budgets | Phase 2 | Mahine ka kharcha target vs actual — core reports ke baad |
+| Recurring invoices/bills, price lists, retainer/progress invoicing | Phase 2 | Mahine ka bill auto-banao, price list per party, advance/retainer — core billing ke baad |
+| Multi-currency | Phase 2 | INR pehle; foreign currency party ke saath rate user daalega |
+| Custom-report builder | Phase 2 | Summaries Phase 1.2 me free hain; builder (khud report banao) Phase 2 me |
+| Barcode scan | Phase 2 (App) | Barcode generate Phase 1.2 (spec) me hai; scan CameraX se Phase 2 App me |
+| Transaction locking / audit trail | Phase 2 | Audit trail (kisne kab kya badla) + period-close lock — core ledger ke baad |
+| Premium invoice themes | Phase 2 | Saare reports Phase 1.2 me free hain; invoice themes apne design se, bina lock ke |
+| Serial number tracking | Phase 2 | Batch/expiry Phase 1.2 me done hai; serial item ke saath Phase 2 me |
+| AI insights / forecasting | Phase 3 (on-device pehle) | Asli AI/forecasting ke liye ya to bada data chahiye ya cloud cost; pehle simple on-device insight (is mahine ki sale pichhle se kitni, kaunsa item chal raha hai), AI baad me |
+| Exam Prep and Photo Editor modules | Phase 3a / 3b | Business core ke baad, alag modules |
+| Direct GST portal filing, realtime cloud sync | Never (by design) | Portal pe user khud upload karega; realtime sync ke liye central server ₹0 me nahi chalega |
+| Public repo / GitHub Pages publish | User decision, later | Repo PRIVATE hai jab tak user publish na kahe |
+| "CA-ready" claim | Phase 1.3 ke baad hi | Only after a real CA import test passes — Tally CSV tab tak BETA hi rahega |
+
+**Out of Scope (not deferred, kabhi nahi):** koi paywall / "Pro" tier nahi
+hoga; koi ads nahi; user ka data kabhi central server pe nahi jayega.
 
 ## Risks / Lessons (2026-11-22)
 - **Classic-script global collision (FOUND + FIXED in Phase 1.2):** every
@@ -190,10 +289,13 @@ docs/                -> Device test cards + notes
 - **Android subagent result removed by safety classifiers; that portion
   must not be continued/recreated in this round** — no Android app or CI
   workflow in this deliverable. Parent decides the next route.
-- **Repo creation failed (2026-11-22):** SkCena org repo create returned
-  GitHub API 404 — SkCena is not connected to Muse (connected account is
-  anon257261-lang). Local files are in `~/workspace/udyamsetu`; no GitHub
-  repo exists yet. User action needed to connect SkCena or pick an account.
+- **Repo — correction (2026-11-22):** `SkCena/udyamsetu` PRIVATE repo pehle
+  se bana hua hai; Phase 1.1 + 1.2 push ho chuke hain (head `177bbf0`).
+  Pehle ke 404 checks galat account (anon257261-lang) se the — SkCena
+  account (`93df4b10c85c4f048d61551aa0dac70f`) se repo dikhta hai. GitHub
+  commands me hamesha `--account` ke saath SkCena account use karo.
+  Repo create via API fail hota hai (403, App se create nahi hota) — create
+  ki zaroorat nahi hai, repo bana hua hai.
 - GST rules change / wrong calc = user penalty — CA review + test JSON
   before any "CA-ready" claim; never guess rates.
 - Trademark for "UdyamSetu" — check before any public publish.
