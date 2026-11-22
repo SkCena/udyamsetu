@@ -68,9 +68,10 @@ Source REA: `~/workspace/research_notes/vyapar-tally-zoho-rea-20261122/report.md
 - Site: static HTML/CSS/JS, no framework, no build step. Storage: IndexedDB
   (localStorage fallback). PDF: print CSS (A4 + 80mm thermal). PWA manifest +
   service worker (cache-first, offline).
-- App: Kotlin 1.9, Jetpack Compose (BOM), Room 2.6, minSdk 29, targetSdk 34,
-  Gradle 8.7, AGP 8.5. JDK 17 in CI. (Android work is STOPPED this round —
-  see Risks; the Site carries Phase 1.2 alone until the App route is decided.)
+- App: Kotlin 2.0.21, Jetpack Compose (BOM 2024.09.00), Room 2.6.1,
+  minSdk 29, targetSdk 34, Gradle 8.7, AGP 8.5.2. JDK 17 in CI.
+  (Phase 2 started 2026-11-22 on the user's yes — see Risks; the Site
+  carried Phase 1.2 alone until then.)
 - Shared core: `core/` — GST math + data model, implemented twice from the
   same spec: `core/gst.js` (Site) and `core/gst.kt` (App). Both must pass the
   same test vectors in `core/gst-test-vectors.json`. All money in integer
@@ -99,7 +100,8 @@ Site tests:   node core/gst.test.js            (114 tests)
 Browser load smoke: node /tmp/udyamsetu-smoke.js  (all 12 scripts load in
   order, DOMContentLoaded handlers run, all 5 Phase 1.2 tabs render)
 Kotlin tests: kotlinc core/gst.kt core/GstTest.kt -include-runtime -d /tmp/gst-test.jar && java -jar /tmp/gst-test.jar
-App CI:       ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug   (GitHub Actions only)
+App logic:    kotlinc app/app/src/main/java/in/udyamsetu/app/core/GstCore.kt app/app/src/main/java/in/udyamsetu/app/logic/*.kt app/app/src/test/java/in/udyamsetu/app/LogicTestMain.kt -include-runtime -d /tmp/udyamsetu-logic-test.jar && java -jar /tmp/udyamsetu-logic-test.jar   (32 tests)
+App CI:       cd app && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug   (GitHub Actions only; local Gradle is blocked on this VM — "Could not receive a message from the daemon", re-verified 2026-11-22)
 ```
 
 ## Project Structure
@@ -188,6 +190,39 @@ docs/                -> Device test cards + notes
       all tabs render); 16/16 files HTTP 200 over local http.
 - [ ] Device test card for Phase 1.2 written — see
       `docs/DEVICE-TEST-1.2-site.md` (user runs it on the phone).
+
+## Success Criteria (Phase 2 — App scaffold + Phase 1 screens, 2026-11-22, headless-verified)
+- [x] Gradle project: `app/` (package `in.udyamsetu.app`, minSdk 29,
+      targetSdk 34, AGP 8.5.2, Kotlin 2.0.21, Gradle 8.7, version catalog),
+      manifest, adaptive launcher icon, Material3 theme.
+- [x] Shared core reused, not rewritten: `app/.../core/GstCore.kt` is
+      byte-identical to `core/gst.kt` (diff-verified); same test vectors.
+- [x] Pure logic modules (`logic/`): LinesCodec, PartyLogic, InventoryLogic,
+      GstReports, PayrollLogic, ReportsLogic — mirror the Site rules
+      (sign convention, cash-flow-only-real-cash, ITC user-entered, BETA Tally).
+- [x] Room: 11 entities + 5 DAOs matching the Site store collections;
+      Repository owns cross-table writes (bill save -> ledger + stock).
+- [x] Screens: Language-first, Home (4 Quick + stats + FTU + first-bill
+      guide + APK card + GitHub), Setup, Billing (draft hoisted in an
+      Activity-scoped ViewModel, preview before save, credit/debit note),
+      Bill List, Party (bill/payment from the party card), Stock, GST,
+      Payroll, Reports, More, About. Home widget (one tap -> New Bill).
+- [x] i18n: 115 strings x 10 languages generated from `site/i18n.js`
+      (`tools/gen-android-strings.py`, deduped, all XML parse OK);
+      language applied from launch via SharedPreferences + recreate.
+- [x] CI workflow `.github/workflows/build-apk.yml` written (Actions only;
+      must be added via the GitHub web UI the first time — API token has
+      no workflow scope). Gradle project lives in `app/`, so CI runs
+      with `working-directory: app`.
+- [x] Host tests green: app logic 32/32, GST core 111/111, Site 598/598,
+      smoke PASS; all XML parse OK; all R.string/R.layout refs resolve.
+- [ ] APK built in CI (workflow not yet in the repo — add via web UI first).
+- [ ] Device test card written — see `docs/DEVICE-TEST-app.md` (user runs
+      it on the phone; no device pass claimed).
+- [ ] iOS-future: business logic in shared core + `logic/` (pure Kotlin,
+      no Android APIs); UI separate. A future iOS surface reuses the core
+      + data model and builds only its own UI (Site PWA already runs on
+      iPhone Safari).
 
 ## Success Criteria (Site polish — Desktop view + REA structure, 2026-11-22, headless-verified)
 - [x] Desktop view: sidebar nav (240px) + 1180px content at >= 1024px;
@@ -363,9 +398,16 @@ hoga; koi ads nahi; user ka data kabhi central server pe nahi jayega.
   as cash-out and credit sales as cash-in — fixed in Phase 1.2 review:
   cash flow counts only real cash (`payment` entries + cash invoices);
   purchaseSummary returns the purchase value as a positive cost.
-- **Android subagent result removed by safety classifiers; that portion
-  must not be continued/recreated in this round** — no Android app or CI
-  workflow in this deliverable. Parent decides the next route.
+- **Android subagent result removed by safety classifiers (Phase 1.1
+  round)** — that round carried no Android app or CI workflow. The user
+  then said yes to the Android route (2026-11-22, "Hn kr") and the parent
+  assigned Phase 2 as a fresh task; the App was built in this round
+  (scaffold + screens + CI workflow, above). Local Gradle stays blocked
+  on this VM — verified again 2026-11-22 with the local Gradle 8.7
+  binary (`--no-daemon` still fails: "Could not receive a message from
+  the daemon"); GitHub Actions is the only build route. The workflow
+  file itself cannot be pushed via the API (no workflow scope) — it must
+  be added via the GitHub web UI the first time.
 - **Repo — correction (2026-11-22):** `SkCena/udyamsetu` PRIVATE repo pehle
   se bana hua hai; Phase 1.1 + 1.2 push ho chuke hain (head `177bbf0`).
   Pehle ke 404 checks galat account (anon257261-lang) se the — SkCena

@@ -1,0 +1,40 @@
+// UdyamSetu — About. Free, no paywall, no ads, data stays on the phone.
+// GitHub link everywhere (repo is private for now — the link opens once
+// it is public; that is written here, not hidden).
+package `in`.udyamsetu.app.ui
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import `in`.udyamsetu.app.R
+
+@Composable
+fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
+    val context = LocalContext.current
+    LazyColumn(modifier = Modifier.padding(16.dp)) {
+        item {
+            SectionTitle(stringResource(R.string.about_title))
+            Text(stringResource(R.string.about_text))
+            Column(modifier = Modifier.padding(top = 12.dp)) {
+                Text(stringResource(R.string.github_title))
+                Text(stringResource(R.string.github_private_note))
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SkCena/udyamsetu")))
+                }) { Text(stringResource(R.string.github_link)) }
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SkCena/udyamsetu/releases")))
+                }) { Text("APK — GitHub Releases") }
+            }
+        }
+    }
+}

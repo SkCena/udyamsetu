@@ -47,3 +47,17 @@
   - Site-complete: APK-needed options (barcode scan, home widget, background sync) "APK chahiye" badge + Releases link; GitHub link header/footer/Home/About
   - Verify: node site/views.test.js → 48 passed, 0 failed; all 598 tests green; smoke PASS; 16/16 files HTTP 200
   - Visual check pending: 360px phone + 1280px desktop browser render (user device test)
+
+# UdyamSetu tasks — Phase 2 (Android app, 2026-11-22)
+
+- [x] Task 15: App scaffold + Room + shared core + all Phase 1.1/1.2 screens + widget + CI workflow
+  - Gradle project app/ (in.udyamsetu.app, minSdk 29, AGP 8.5.2, Kotlin 2.0.21, Gradle 8.7, version catalog); manifest; adaptive icon; Material3 theme
+  - Shared core reused: app/.../core/GstCore.kt byte-identical to core/gst.kt (diff-verified)
+  - Pure logic: LinesCodec, PartyLogic, InventoryLogic, GstReports, PayrollLogic, ReportsLogic (Site rules mirrored)
+  - Room: 11 entities + 5 DAOs; Repository owns bill-save -> ledger + stock writes
+  - Screens: Language-first, Home (4 Quick + stats + FTU + first-bill guide + APK card + GitHub), Setup, Billing (Activity-scoped draft ViewModel, preview before save), Bill List, Party, Stock, GST, Payroll, Reports, More, About; home widget
+  - i18n: tools/gen-android-strings.py from site/i18n.js — 115 strings x 10 languages, no dups, XML parse OK
+  - CI: .github/workflows/build-apk.yml (Actions only; add via web UI first — API token has no workflow scope)
+  - Verify: app logic 32 passed 0 failed; GST core 111 passed 0 failed; Site 598 passed 0 failed; smoke PASS; R.string/R.layout refs all resolve; XML parse OK
+  - Local Gradle re-verified BLOCKED 2026-11-22 ("Could not receive a message from the daemon", local Gradle 8.7 --no-daemon)
+  - NOT done: APK build in CI (workflow not in repo yet); device test (docs/DEVICE-TEST-app.md, user to run)
