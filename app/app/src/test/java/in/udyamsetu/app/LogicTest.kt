@@ -18,6 +18,7 @@ import `in`.udyamsetu.app.logic.decryptBackup
 import `in`.udyamsetu.app.logic.encodeBackup
 import `in`.udyamsetu.app.logic.encodeLines
 import `in`.udyamsetu.app.logic.encryptBackup
+import `in`.udyamsetu.app.logic.findPartyByName
 import `in`.udyamsetu.app.logic.BackupData
 import `in`.udyamsetu.app.logic.BasicCalcState
 import `in`.udyamsetu.app.logic.INVOICE_TEMPLATES
@@ -55,6 +56,17 @@ class LogicTest {
             LedgerRow("e2", "p1", "2026-11-02", "payment", -2000L),
         )
         assertEquals(4000L, partyBalance(party, entries))
+    }
+
+    @Test
+    fun billPartyFoundByNameIgnoringCaseAndSpaces() {
+        val parties = listOf(PartyRow("p1", "Ramesh Kumar"), PartyRow("p2", "Sita Devi"))
+        assertEquals("p1", findPartyByName(parties, "Ramesh Kumar")?.id)
+        assertEquals("p1", findPartyByName(parties, "ramesh kumar")?.id)
+        assertEquals("p1", findPartyByName(parties, "  Ramesh Kumar  ")?.id)
+        assertEquals(null, findPartyByName(parties, "Mohan"))
+        assertEquals(null, findPartyByName(parties, "   "))
+        assertEquals(null, findPartyByName(emptyList(), "Ramesh"))
     }
 
     @Test

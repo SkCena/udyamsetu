@@ -40,6 +40,19 @@ data class DueReminder(
 fun partyBalance(party: PartyRow, entries: List<LedgerRow>): Long =
     party.openingBalancePaise + entries.filter { it.partyId == party.id }.sumOf { it.amountPaise }
 
+/**
+ * Bill ke party ko naam se dhoondho — naam aas-paas ki khaali jagah aur
+ * bade/chhote akshar se farak nahi padta ("Ramesh Kumar" == "ramesh kumar ").
+ * Naam khaali ho ya koi match na ho to null. Bill save pe party resolve
+ * karne ka ek hi rule hai (Repository.resolveParty bhi yahi use karta hai)
+ * taaki saved bill pe partyId/partyName sahi aayein aur udhaar entry bane.
+ */
+fun findPartyByName(parties: List<PartyRow>, name: String): PartyRow? {
+    val clean = name.trim()
+    if (clean.isEmpty()) return null
+    return parties.firstOrNull { it.name.trim().equals(clean, ignoreCase = true) }
+}
+
 fun statement(party: PartyRow, entries: List<LedgerRow>): List<StatementRow> {
     var running = party.openingBalancePaise
     return entries.filter { it.partyId == party.id }

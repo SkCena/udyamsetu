@@ -30,10 +30,12 @@ import `in`.udyamsetu.app.logic.billTotalsForType
 import `in`.udyamsetu.app.logic.decodeLines
 import `in`.udyamsetu.app.logic.docNumberPrefix
 import `in`.udyamsetu.app.logic.encodeLines
+import `in`.udyamsetu.app.logic.findPartyByName
 import `in`.udyamsetu.app.logic.isSaleDoc
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 class Repository(private val db: AppDatabase) {
     private val profileDao get() = db.profileDao()
@@ -61,6 +63,40 @@ class Repository(private val db: AppDatabase) {
     suspend fun saveLedgerEntry(e: LedgerEntryEntity) = partyDao.saveEntry(e)
     fun observeLedger(partyId: String): Flow<List<LedgerEntryEntity>> =
         partyDao.observeLedger(partyId)
+
+    /**
+     * Bill ke party ko draft ke naam se resolve karo. Pehle se saved party
+     * mile (naam se — case/space se farak nahi padta) to wahi; na mile to
+     * nayi party banao aur draft ka GSTIN saath le lo. Bina iske saveInvoice
+     * ko party null milti thi aur bill save hone pe kabhi udhaar entry nahi
+     * banti thi, saved bill pe partyId/partyName bhi khaali rehte the.
+     * Existing party ke record me GSTIN khaali ho aur draft me likha ho to
+     * bhar do — warna saved bill se GSTIN gayab ho jata hai (saveInvoice
+     * party ka GSTIN likhta hai, draft ka nahi).
+     */
+    suspend fun resolveParty(name: String, gstin: String?): PartyEntity {
+        val cleanName = name.trim()
+        val cleanGstin = gstin?.trim()?.uppercase()?.takeIf { it.isNotEmpty() }
+        val match = findPartyByName(allPartyRows(), cleanName)
+        if (match != null) {
+            val existing = partyDao.get(match.id)
+            if (existing != null) {
+                if (existing.gstin.isNullOrBlank() && cleanGstin != null) {
+                    val updated = existing.copy(gstin = cleanGstin)
+                    partyDao.save(updated)
+                    return updated
+                }
+                return existing
+            }
+        }
+        val created = PartyEntity(
+            id = UUID.randomUUID().toString(),
+            name = cleanName,
+            gstin = cleanGstin,
+        )
+        partyDao.save(created)
+        return created
+    }
 
     suspend fun allPartyRows(): List<PartyRow> =
         partyDao.allParties().map { PartyRow(it.id, it.name, it.openingBalancePaise) }

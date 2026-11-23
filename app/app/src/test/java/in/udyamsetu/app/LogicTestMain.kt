@@ -34,6 +34,7 @@ import `in`.udyamsetu.app.logic.PartyBackup
 import `in`.udyamsetu.app.logic.ProfileBackup
 import `in`.udyamsetu.app.logic.expiringBatches
 import `in`.udyamsetu.app.logic.extractGstFromTotal
+import `in`.udyamsetu.app.logic.findPartyByName
 import `in`.udyamsetu.app.logic.gstr1Summary
 import `in`.udyamsetu.app.logic.gstr3bSummary
 import `in`.udyamsetu.app.logic.isGstDoc
@@ -102,6 +103,17 @@ fun main() {
     eq("party.statement.last", statement(party, entries).last().runningBalancePaise, 4000L)
     eq("party.due.count", dueReminders(listOf(party), entries, "2026-11-10").size, 1)
     eq("party.due.days", dueReminders(listOf(party), entries, "2026-11-10")[0].daysDue, 9)
+
+    // Bill party resolve: bill save pe party naam se milni chahiye —
+    // bade/chhote akshar ya aas-paas ki khaali jagah se farak nahi padta.
+    // (Isi resolve se saveInvoice ko party milti hai aur ledger entry banti hai.)
+    val billParties = listOf(PartyRow("p1", "Ramesh Kumar"), PartyRow("p2", "Sita Devi"))
+    eq("party.find.exact", findPartyByName(billParties, "Ramesh Kumar")?.id, "p1")
+    eq("party.find.case", findPartyByName(billParties, "ramesh kumar")?.id, "p1")
+    eq("party.find.spaces", findPartyByName(billParties, "  Ramesh Kumar  ")?.id, "p1")
+    eq("party.find.missing", findPartyByName(billParties, "Mohan"), null)
+    eq("party.find.blank", findPartyByName(billParties, "   "), null)
+    eq("party.find.empty-list", findPartyByName(emptyList(), "Ramesh"), null)
 
     // Inventory.
     val items = listOf(ItemRow("i1", "Rice", "1001", 5), ItemRow("i2", "Sugar", "1701", 10))

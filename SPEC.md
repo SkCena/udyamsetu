@@ -262,7 +262,7 @@ docs/                -> Device test cards + notes
   only; add it through the GitHub website the first time — the API
   can't push workflow files). The Gradle project lives in `app/`, so
   CI runs with `working-directory: app`.
-- Host tests green: app logic 104/104, GST core 111/111, Site 958/958,
+- Host tests green: app logic 110/110, GST core 111/111, Site 958/958,
   smoke PASS; all XML parses fine; all string/layout references
   resolve.
 - MoreScreen fix (CI run #12): `item(modifier = Modifier.animateItem())`
@@ -283,6 +283,17 @@ docs/                -> Device test cards + notes
   @Composable scope, no `animateItem` call left anywhere, and every
   `R.string` used in code exists in all 10 locales (182 used, 220
   keys, identical sets).
+- Ledger fix (bill save pe udhaar entry nahi banti thi): `saveDraftBill`
+  hamesha `party = null` bhejta tha `saveInvoice` ko, to ledger entry
+  (jo sirf `party != null && isSaleDoc(type)` pe banti hai) kabhi nahi
+  banti thi aur saved bill pe partyId/partyName khaali rehte the. Ab
+  draft ka partyName naam se resolve hota hai — `findPartyByName`
+  (logic/PartyLogic.kt: trim + case-insensitive) se existing party
+  mile to wahi, na mile to nayi party banti hai (draft ka GSTIN saath;
+  existing party ke record me GSTIN khaali ho aur draft me likha ho to
+  bhar diya jata hai, warna saved bill se GSTIN gayab ho jata). Sign
+  rule nahi badla — credit note negate, debit note positive, aur
+  ledger sirf sale docs pe (pehle jaisa).
 - Still open: the APK hasn't built in CI yet (the workflow isn't in
   the repo — add it through the website first). Device test card:
   `docs/DEVICE-TEST-app.md`.

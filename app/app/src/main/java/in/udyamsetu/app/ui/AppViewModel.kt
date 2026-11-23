@@ -290,10 +290,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 onDone("")
                 return@launch
             }
+            // Draft ka party naam se resolve karo — nayi party ho to banao.
+            // Isse saved bill pe partyId/partyName sahi aate hain aur
+            // credit sale pe ledger (udhaar) entry banti hai.
+            val party = repo.resolveParty(draft.partyName, draft.partyGstin)
             val number = repo.saveInvoice(
                 profile = profile,
-                party = null, // party lookup by name happens in the Party screen;
-                // a bill without a saved party still saves (walk-in customer).
+                party = party,
                 lines = lines,
                 buyerState = draft.buyerState,
                 date = repo.todayIso(),
